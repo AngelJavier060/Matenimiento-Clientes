@@ -1,0 +1,85 @@
+<app-navbar title="Mis Vehículos">
+  <button class="btn-icon" (click)="loadVehicles()" title="Actualizar">
+    <span class="material-icons-round">refresh</span>
+  </button>
+</app-navbar>
+
+<div class="page-content">
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-wrapper">
+      <span class="material-icons-round">search</span>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar vehículo..." class="search-input">
+    </div>
+    <div class="filter-buttons">
+      <button [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">Todos</button>
+      <button [class.active]="filterStatus === 'active'" (click)="filterStatus = 'active'">Activos</button>
+      <button [class.active]="filterStatus === 'inactive'" (click)="filterStatus = 'inactive'">Inactivos</button>
+    </div>
+    <button class="btn-primary" (click)="newVehicle()">
+      <span class="material-icons-round">add</span>
+      Agregar
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-lg"></div>
+  </div>
+
+  <!-- Vehicles Grid -->
+  <div *ngIf="!loading && filteredVehicles.length > 0" class="vehicles-grid">
+    <div class="vehicle-card" *ngFor="let v of filteredVehicles"
+         (click)="viewDetail(v.id)">
+      <div class="vehicle-card-header">
+        <div class="vehicle-avatar">
+          <span class="material-icons-round">directions_car</span>
+        </div>
+        <div class="vehicle-actions">
+          <button class="btn-action" (click)="editVehicle(v.id, $event)" title="Editar">
+            <span class="material-icons-round">edit</span>
+          </button>
+          <button class="btn-action delete" (click)="deleteVehicle(v.id, $event)" title="Eliminar">
+            <span class="material-icons-round">delete</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vehicle-card-body">
+        <h3>{{ v.brand }} {{ v.model }}</h3>
+        <p class="vehicle-year">{{ v.year }}</p>
+        <div class="vehicle-details">
+          <span *ngIf="v.licensePlate" class="vehicle-tag">
+            <span class="material-icons-round">confirmation_number</span>
+            {{ v.licensePlate }}
+          </span>
+          <span class="vehicle-tag">
+            <span class="material-icons-round">speed</span>
+            {{ v.mileage || 0 }} km
+          </span>
+        </div>
+      </div>
+
+      <div class="vehicle-card-footer">
+        <span class="status-badge" [class.active]="v.isActive">
+          {{ v.isActive ? 'Activo' : 'Inactivo' }}
+        </span>
+        <span class="maintenance-count">
+          {{ v.maintenanceCount }} mantenimientos
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredVehicles.length === 0" class="empty-state">
+    <span class="material-icons-round empty-icon">directions_car</span>
+    <h3 *ngIf="searchTerm || filterStatus !== 'all'">Sin resultados</h3>
+    <h3 *ngIf="!searchTerm && filterStatus === 'all'">No tienes vehículos registrados</h3>
+    <p>Agrega tu primer vehículo para empezar</p>
+    <button class="btn-primary" (click)="newVehicle()">
+      <span class="material-icons-round">add</span>
+      Agregar Vehículo
+    </button>
+  </div>
+</div>

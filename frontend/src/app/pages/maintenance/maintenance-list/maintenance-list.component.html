@@ -1,0 +1,66 @@
+<app-navbar title="Mantenimientos">
+  <button class="btn-icon" (click)="selectedVehicleId && onVehicleChange(selectedVehicleId)" title="Actualizar">
+    <span class="material-icons-round">refresh</span>
+  </button>
+</app-navbar>
+
+<div class="page-content">
+  <div class="filters-bar">
+    <div class="vehicle-select-wrapper">
+      <span class="material-icons-round">directions_car</span>
+      <select [(ngModel)]="selectedVehicleId" (change)="onVehicleChange(selectedVehicleId!)">
+        <option [ngValue]="null">Seleccionar vehículo</option>
+        <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }} - {{ v.licensePlate }}</option>
+      </select>
+    </div>
+    <button class="btn-primary" (click)="newMaintenance()" [disabled]="!selectedVehicleId">
+      <span class="material-icons-round">add</span>
+      Nuevo
+    </button>
+  </div>
+
+  <div *ngIf="!selectedVehicleId" class="empty-state">
+    <span class="material-icons-round empty-icon">build_outline</span>
+    <h3>Selecciona un vehículo</h3>
+    <p>Elige un vehículo para ver sus mantenimientos</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-lg"></div>
+  </div>
+
+  <div *ngIf="selectedVehicleId && !loading && maintenances.length > 0" class="maintenance-list">
+    <div class="maintenance-card" *ngFor="let m of maintenances">
+      <div class="maint-header">
+        <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
+        <span class="maint-date">{{ m.serviceDate || '-' }}</span>
+        <button class="btn-delete" (click)="deleteMaintenance(m.id)" title="Eliminar">
+          <span class="material-icons-round">delete</span>
+        </button>
+      </div>
+      <h4>{{ m.serviceType }}</h4>
+      <p *ngIf="m.description">{{ m.description }}</p>
+      <div class="maint-meta">
+        <span *ngIf="m.mileageAtService"><span class="material-icons-round">speed</span>{{ m.mileageAtService }} km</span>
+        <span *ngIf="m.cost"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
+        <span *ngIf="m.workshopName"><span class="material-icons-round">store</span>{{ m.workshopName }}</span>
+      </div>
+      <div class="maint-next" *ngIf="m.nextServiceMileage || m.nextServiceDate">
+        <span class="material-icons-round">schedule</span>
+        Próximo: {{ m.nextServiceMileage ? m.nextServiceMileage + ' km' : '' }}
+        {{ m.nextServiceMileage && m.nextServiceDate ? '·' : '' }}
+        {{ m.nextServiceDate || '' }}
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="selectedVehicleId && !loading && maintenances.length === 0" class="empty-state">
+    <span class="material-icons-round empty-icon">build</span>
+    <h3>Sin mantenimientos</h3>
+    <p>Este vehículo no tiene mantenimientos registrados</p>
+    <button class="btn-primary" (click)="newMaintenance()">
+      <span class="material-icons-round">add</span>
+      Agregar Mantenimiento
+    </button>
+  </div>
+</div>

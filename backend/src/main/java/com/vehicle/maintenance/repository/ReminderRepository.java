@@ -1,0 +1,36 @@
+package com.vehicle.maintenance.repository;
+
+import com.vehicle.maintenance.model.Reminder;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ReminderRepository extends JpaRepository<Reminder, Long> {
+
+    List<Reminder> findByUserIdAndIsActiveTrueOrderByCreatedAtDesc(Long userId);
+
+    List<Reminder> findByVehicleIdAndIsActiveTrueOrderByCreatedAtDesc(Long vehicleId);
+
+    Optional<Reminder> findByIdAndUserId(Long id, Long userId);
+
+    @Query("SELECT r FROM Reminder r WHERE r.isActive = true AND (" +
+           "(r.reminderType = 'MILEAGE_BASED' OR r.reminderType = 'BOTH') AND " +
+           "r.thresholdMileage IS NOT NULL) OR " +
+           "((r.reminderType = 'DATE_BASED' OR r.reminderType = 'BOTH') AND " +
+           "r.thresholdDate IS NOT NULL AND r.thresholdDate <= :today)")
+    List<Reminder> findDueReminders(@Param("today") LocalDate today);
+
+    @Query("SELECT r FROM Reminder r WHERE r.isActive = true AND r.user.id = :userId AND (" +
+           "(r.reminderType = 'MILEAGE_BASED' OR r.reminderType = 'BOTH') OR " +
+           "((r.reminderType = 'DATE_BASED' OR r.reminderType = 'BOTH') AND " +
+           "r.thresholdDate IS NOT NULL AND r.thresholdDate <= :today))")
+    List<Reminder> findDueRemindersByUser(
+            @Param("userId") Long userId,
+            @Param("today") LocalDate today);
+}

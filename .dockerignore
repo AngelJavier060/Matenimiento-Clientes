@@ -1,0 +1,25 @@
+# Excluir app_mantenimiento (Flutter - solo desarrollo local)
+app_mantenimiento/
+
+# Dependencias
+frontend/node_modules/
+backend/target/
+# backend/.mvn/ (necesario para el build)
+
+# Directorios de build
+frontend/dist/
+frontend/.angular/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+pgdata/
+
+# Logs
+*.log

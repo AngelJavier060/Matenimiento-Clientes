@@ -1,0 +1,28 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: transparent;
+}
+
+.navbar-left {
+  .navbar-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .navbar-subtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 2px 0 0 0;
+  }
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

@@ -1,0 +1,40 @@
+.custom-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(143, 163, 191, 0.2);
+  transition: var(--transition);
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(143, 163, 191, 0.2);
+}
+
+.card-icon {
+  font-size: 24px;
+  color: var(--color-primary);
+  background: rgba(74, 111, 165, 0.1);
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.card-body {
+  color: var(--color-text);
+}

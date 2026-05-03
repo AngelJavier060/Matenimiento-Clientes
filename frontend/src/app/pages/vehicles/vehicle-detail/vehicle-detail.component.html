@@ -1,0 +1,160 @@
+<div class="detail-page" *ngIf="vehicle">
+  <div class="detail-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons-round">arrow_back</span>
+    </button>
+    <div class="detail-header-info">
+      <div class="detail-avatar">
+        <span class="material-icons-round">directions_car</span>
+      </div>
+      <div>
+        <h1>{{ vehicle.brand }} {{ vehicle.model }}</h1>
+        <p>{{ vehicle.year }} · {{ vehicle.licensePlate || 'Sin placa' }}</p>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="btn-action" (click)="editVehicle()" title="Editar">
+        <span class="material-icons-round">edit</span>
+      </button>
+      <button class="btn-action delete" (click)="deleteVehicle()" title="Eliminar">
+        <span class="material-icons-round">delete</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="detail-tabs">
+    <button [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">
+      <span class="material-icons-round">info</span>
+      Información
+    </button>
+    <button [class.active]="activeTab === 'maintenance'" (click)="activeTab = 'maintenance'">
+      <span class="material-icons-round">build</span>
+      Mantenimientos ({{ maintenances.length }})
+    </button>
+    <button [class.active]="activeTab === 'reminders'" (click)="activeTab = 'reminders'">
+      <span class="material-icons-round">notifications</span>
+      Recordatorios ({{ reminders.length }})
+    </button>
+  </div>
+
+  <div class="detail-content">
+    <!-- Info Tab -->
+    <div *ngIf="activeTab === 'info'" class="tab-content info-tab">
+      <div class="info-card">
+        <h3>Información General</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Marca</span>
+            <span class="info-value">{{ vehicle.brand }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Modelo</span>
+            <span class="info-value">{{ vehicle.model }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Año</span>
+            <span class="info-value">{{ vehicle.year }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Placa</span>
+            <span class="info-value">{{ vehicle.licensePlate || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">VIN</span>
+            <span class="info-value">{{ vehicle.vin || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Kilometraje</span>
+            <span class="info-value">{{ vehicle.mileage || 0 }} km</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Combustible</span>
+            <span class="info-value">{{ vehicle.fuelType || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Transmisión</span>
+            <span class="info-value">{{ vehicle.transmission || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Color</span>
+            <span class="info-value">{{ vehicle.color || '-' }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-card" *ngIf="vehicle.notes">
+        <h3>Notas</h3>
+        <p>{{ vehicle.notes }}</p>
+      </div>
+    </div>
+
+    <!-- Maintenance Tab -->
+    <div *ngIf="activeTab === 'maintenance'" class="tab-content">
+      <div class="tab-header">
+        <h3>Historial de Mantenimientos</h3>
+        <button class="btn-primary" [routerLink]="['/maintenance/new']" [queryParams]="{vehicleId: vehicle.id}">
+          <span class="material-icons-round">add</span>
+          Nuevo
+        </button>
+      </div>
+
+      <div *ngIf="maintenances.length === 0" class="empty-tab">
+        <span class="material-icons-round">build_outline</span>
+        <p>Sin mantenimientos registrados</p>
+      </div>
+
+      <div class="maintenance-list" *ngIf="maintenances.length > 0">
+        <div class="maintenance-item" *ngFor="let m of maintenances">
+          <div class="maint-header">
+            <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
+            <span class="maint-date">{{ m.serviceDate || '-' }}</span>
+          </div>
+          <h4>{{ m.serviceType }}</h4>
+          <p *ngIf="m.description">{{ m.description }}</p>
+          <div class="maint-meta">
+            <span *ngIf="m.mileageAtService"><span class="material-icons-round">speed</span>{{ m.mileageAtService }} km</span>
+            <span *ngIf="m.cost"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
+            <span *ngIf="m.workshopName"><span class="material-icons-round">store</span>{{ m.workshopName }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reminders Tab -->
+    <div *ngIf="activeTab === 'reminders'" class="tab-content">
+      <div class="tab-header">
+        <h3>Recordatorios</h3>
+        <button class="btn-primary" [routerLink]="['/reminders/new']" [queryParams]="{vehicleId: vehicle.id}">
+          <span class="material-icons-round">add</span>
+          Nuevo
+        </button>
+      </div>
+
+      <div *ngIf="reminders.length === 0" class="empty-tab">
+        <span class="material-icons-round">notifications_off</span>
+        <p>Sin recordatorios configurados</p>
+      </div>
+
+      <div class="reminders-list" *ngIf="reminders.length > 0">
+        <div class="reminder-item" *ngFor="let r of reminders">
+          <div class="reminder-icon" [class.active]="r.isActive">
+            <span class="material-icons-round">{{ r.isActive ? 'notifications_active' : 'notifications_off' }}</span>
+          </div>
+          <div class="reminder-info">
+            <h4>{{ r.title }}</h4>
+            <p *ngIf="r.description">{{ r.description }}</p>
+            <div class="reminder-meta">
+              <span *ngIf="r.thresholdMileage"><span class="material-icons-round">speed</span>{{ r.thresholdMileage }} km</span>
+              <span *ngIf="r.thresholdDate"><span class="material-icons-round">calendar_today</span>{{ r.thresholdDate }}</span>
+            </div>
+          </div>
+          <span class="status-tag" [class.active]="r.isActive">{{ r.isActive ? 'Activo' : 'Inactivo' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loading-container">
+  <div class="spinner-lg"></div>
+</div>

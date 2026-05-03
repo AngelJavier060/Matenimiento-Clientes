@@ -1,0 +1,91 @@
+<div class="form-page">
+  <div class="form-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons-round">arrow_back</span>
+    </button>
+    <h1>{{ isEditing ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner-lg"></div>
+  </div>
+
+  <form *ngIf="!loading" (ngSubmit)="onSubmit()" class="form-content">
+    <div class="form-card">
+      <h3>Información del Vehículo</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Marca *</label>
+          <input type="text" [(ngModel)]="formData.brand" name="brand" placeholder="Toyota" required>
+        </div>
+        <div class="form-group">
+          <label>Modelo *</label>
+          <input type="text" [(ngModel)]="formData.model" name="model" placeholder="Corolla" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Año *</label>
+          <input type="number" [(ngModel)]="formData.year" name="year" placeholder="2024" required min="1900" max="2030">
+        </div>
+        <div class="form-group">
+          <label>Placa</label>
+          <input type="text" [(ngModel)]="formData.licensePlate" name="licensePlate" placeholder="ABC-123">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>VIN</label>
+          <input type="text" [(ngModel)]="formData.vin" name="vin" placeholder="17 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <input type="text" [(ngModel)]="formData.color" name="color" placeholder="Rojo">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Especificaciones</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kilometraje</label>
+          <input type="number" [(ngModel)]="formData.mileage" name="mileage" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Combustible</label>
+          <select [(ngModel)]="formData.fuelType" name="fuelType">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Transmisión</label>
+          <select [(ngModel)]="formData.transmission" name="transmission">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let t of transmissionTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea [(ngModel)]="formData.notes" name="notes" rows="3" placeholder="Notas adicionales..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-error" *ngIf="error">
+      <span class="material-icons-round">error</span>
+      {{ error }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="goBack()">Cancelar</button>
+      <button type="submit" class="btn-submit" [disabled]="submitting">
+        {{ submitting ? 'Guardando...' : (isEditing ? 'Actualizar Vehículo' : 'Guardar Vehículo') }}
+      </button>
+    </div>
+  </form>
+</div>

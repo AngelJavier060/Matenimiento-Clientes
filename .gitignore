@@ -1,0 +1,47 @@
+# ===== Java / Maven =====
+backend/target/
+*.class
+*.jar
+*.war
+*.log
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Entorno =====
+.env
+backend/.env
+
+# ===== Frontend (Angular) =====
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.cache/
+
+# ===== Flutter (app_mantenimiento) =====
+# Solo ignoramos builds, NO el pubspec.lock (debe trackearse)
+app_mantenimiento/.dart_tool/
+app_mantenimiento/.packages
+app_mantenimiento/.pub/
+app_mantenimiento/build/
+app_mantenimiento/.flutter-plugins*
+app_mantenimiento/android/.gradle/
+app_mantenimiento/android/local.properties
+app_mantenimiento/ios/Pods/
+app_mantenimiento/ios/.symlinks/
+
+# ===== Docker =====
+pgdata/
+
+# ===== Misc =====
+*.log
+*.tmp

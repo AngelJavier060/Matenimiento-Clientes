@@ -1,0 +1,67 @@
+<app-navbar title="Recordatorios">
+  <button class="btn-icon" (click)="selectedVehicleId && onVehicleChange(selectedVehicleId)" title="Actualizar">
+    <span class="material-icons-round">refresh</span>
+  </button>
+</app-navbar>
+
+<div class="page-content">
+  <div class="filters-bar">
+    <div class="vehicle-select-wrapper">
+      <span class="material-icons-round">directions_car</span>
+      <select [(ngModel)]="selectedVehicleId" (change)="onVehicleChange(selectedVehicleId!)">
+        <option [ngValue]="null">Seleccionar vehículo</option>
+        <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }}</option>
+      </select>
+    </div>
+    <button class="btn-primary" (click)="newReminder()" [disabled]="!selectedVehicleId">
+      <span class="material-icons-round">add</span>
+      Nuevo
+    </button>
+  </div>
+
+  <div *ngIf="!selectedVehicleId" class="empty-state">
+    <span class="material-icons-round empty-icon">notifications_active</span>
+    <h3>Selecciona un vehículo</h3>
+    <p>Elige un vehículo para ver sus recordatorios</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-lg"></div>
+  </div>
+
+  <div *ngIf="selectedVehicleId && !loading && reminders.length > 0" class="reminders-list">
+    <div class="reminder-card" *ngFor="let r of reminders">
+      <div class="reminder-left">
+        <div class="reminder-icon" [class.active]="r.isActive">
+          <span class="material-icons-round">{{ r.isActive ? 'notifications_active' : 'notifications_off' }}</span>
+        </div>
+      </div>
+      <div class="reminder-body">
+        <h4>{{ r.title }}</h4>
+        <p *ngIf="r.description">{{ r.description }}</p>
+        <div class="reminder-meta">
+          <span *ngIf="r.reminderType" class="meta-tag">{{ r.reminderType }}</span>
+          <span *ngIf="r.thresholdMileage"><span class="material-icons-round">speed</span>{{ r.thresholdMileage }} km</span>
+          <span *ngIf="r.thresholdDate"><span class="material-icons-round">calendar_today</span>{{ r.thresholdDate }}</span>
+          <span *ngIf="r.isRecurring"><span class="material-icons-round">repeat</span>Cada {{ r.recurringInterval }} días</span>
+        </div>
+      </div>
+      <div class="reminder-right">
+        <span class="status-tag" [class.active]="r.isActive">{{ r.isActive ? 'Activo' : 'Inactivo' }}</span>
+        <button class="btn-delete" (click)="deleteReminder(r.id)" title="Eliminar">
+          <span class="material-icons-round">delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="selectedVehicleId && !loading && reminders.length === 0" class="empty-state">
+    <span class="material-icons-round empty-icon">notifications_off</span>
+    <h3>Sin recordatorios</h3>
+    <p>Este vehículo no tiene recordatorios configurados</p>
+    <button class="btn-primary" (click)="newReminder()">
+      <span class="material-icons-round">add</span>
+      Agregar Recordatorio
+    </button>
+  </div>
+</div>

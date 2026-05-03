@@ -1,0 +1,73 @@
+<div class="form-page">
+  <div class="form-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons-round">arrow_back</span>
+    </button>
+    <h1>Nuevo Recordatorio</h1>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="form-content">
+    <div class="form-card">
+      <h3>Información</h3>
+      <div class="form-group">
+        <label>Vehículo *</label>
+        <select [(ngModel)]="formData.vehicleId" name="vehicleId">
+          <option [ngValue]="null">Seleccionar vehículo</option>
+          <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Título *</label>
+        <input type="text" [(ngModel)]="formData.title" name="title" placeholder="Cambio de aceite" required>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="formData.description" name="description" rows="3" placeholder="Descripción del recordatorio..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Configuración</h3>
+      <div class="form-group">
+        <label>Tipo *</label>
+        <select [(ngModel)]="formData.reminderType" name="reminderType">
+          <option *ngFor="let t of reminderTypes" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="form-row" *ngIf="showMileage">
+        <div class="form-group">
+          <label>Kilometraje límite</label>
+          <input type="number" [(ngModel)]="formData.thresholdMileage" name="thresholdMileage" placeholder="50000">
+        </div>
+      </div>
+      <div class="form-row" *ngIf="showDate">
+        <div class="form-group">
+          <label>Fecha límite</label>
+          <input type="date" [(ngModel)]="formData.thresholdDate" name="thresholdDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formData.isRecurring" name="isRecurring">
+          <span>¿Recurrente?</span>
+        </label>
+      </div>
+      <div class="form-group" *ngIf="formData.isRecurring">
+        <label>Intervalo (días)</label>
+        <input type="number" [(ngModel)]="formData.recurringInterval" name="recurringInterval" placeholder="30">
+      </div>
+    </div>
+
+    <div class="form-error" *ngIf="error">
+      <span class="material-icons-round">error</span>
+      {{ error }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="goBack()">Cancelar</button>
+      <button type="submit" class="btn-submit" [disabled]="submitting">
+        {{ submitting ? 'Guardando...' : 'Guardar Recordatorio' }}
+      </button>
+    </div>
+  </form>
+</div>

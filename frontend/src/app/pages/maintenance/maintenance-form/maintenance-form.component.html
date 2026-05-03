@@ -1,0 +1,98 @@
+<div class="form-page">
+  <div class="form-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="material-icons-round">arrow_back</span>
+    </button>
+    <h1>Nuevo Mantenimiento</h1>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="form-content">
+    <div class="form-card">
+      <h3>Datos del Servicio</h3>
+      <div class="form-group">
+        <label>Vehículo *</label>
+        <select [(ngModel)]="formData.vehicleId" name="vehicleId">
+          <option [ngValue]="null">Seleccionar vehículo</option>
+          <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de servicio *</label>
+          <input type="text" [(ngModel)]="formData.serviceType" name="serviceType" placeholder="Cambio de aceite" required>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select [(ngModel)]="formData.status" name="status">
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="formData.description" name="description" rows="3" placeholder="Detalles del servicio..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Detalles</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kilometraje</label>
+          <input type="number" [(ngModel)]="formData.mileageAtService" name="mileageAtService" placeholder="50000">
+        </div>
+        <div class="form-group">
+          <label>Costo ($)</label>
+          <input type="number" step="0.01" [(ngModel)]="formData.cost" name="cost" placeholder="150.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha del servicio</label>
+          <input type="date" [(ngModel)]="formData.serviceDate" name="serviceDate">
+        </div>
+        <div class="form-group"></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Próximo Servicio & Taller</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Próximo km</label>
+          <input type="number" [(ngModel)]="formData.nextServiceMileage" name="nextServiceMileage" placeholder="60000">
+        </div>
+        <div class="form-group">
+          <label>Próxima fecha</label>
+          <input type="date" [(ngModel)]="formData.nextServiceDate" name="nextServiceDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Taller</label>
+          <input type="text" [(ngModel)]="formData.workshopName" name="workshopName" placeholder="Nombre del taller">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="formData.workshopAddress" name="workshopAddress" placeholder="Dirección del taller">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <textarea [(ngModel)]="formData.notes" name="notes" rows="3" placeholder="Notas adicionales..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-error" *ngIf="error">
+      <span class="material-icons-round">error</span>
+      {{ error }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="goBack()">Cancelar</button>
+      <button type="submit" class="btn-submit" [disabled]="submitting">
+        {{ submitting ? 'Guardando...' : 'Guardar Mantenimiento' }}
+      </button>
+    </div>
+  </form>
+</div>
