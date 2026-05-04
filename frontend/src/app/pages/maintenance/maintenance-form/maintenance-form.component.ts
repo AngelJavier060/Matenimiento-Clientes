@@ -39,11 +39,21 @@ export class MaintenanceFormComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.vehicleService.getVehicles().subscribe(data => {
+    this.vehicleService.getVehicles().subscribe((data) => {
       this.vehicles = data;
-      const vehicleId = this.route.snapshot.queryParamMap.get('vehicleId');
+      const qp = this.route.snapshot.queryParamMap;
+      const vehicleId = qp.get('vehicleId');
       if (vehicleId) {
         this.formData.vehicleId = Number(vehicleId);
+      }
+      const cat = qp.get('categoria');
+      if (!this.formData.serviceType.trim()) {
+        // En menú «Correctivo» se usa la plantilla que antes era preventiva.
+        if (cat === 'correctivo') {
+          this.formData.serviceType = 'Mantenimiento preventivo';
+        } else if (cat === 'preventivo') {
+          this.formData.serviceType = 'Mantenimiento correctivo';
+        }
       }
     });
   }
@@ -74,7 +84,12 @@ export class MaintenanceFormComponent implements OnInit {
 
     this.maintenanceService.createMaintenance(request).subscribe({
       next: () => {
-        this.router.navigate(['/maintenance'], { queryParams: { vehicleId: this.formData.vehicleId } });
+        const cat = this.route.snapshot.queryParamMap.get('categoria');
+        const q: Record<string, number | string> = { vehicleId: this.formData.vehicleId! };
+        if (cat === 'correctivo' || cat === 'preventivo') {
+          q['categoria'] = cat;
+        }
+        void this.router.navigate(['/maintenance'], { queryParams: q });
       },
       error: (err) => {
         this.submitting = false;
@@ -84,7 +99,14 @@ export class MaintenanceFormComponent implements OnInit {
   }
 
   goBack() {
-    const params = this.formData.vehicleId ? { vehicleId: this.formData.vehicleId } : {};
-    this.router.navigate(['/maintenance'], { queryParams: params });
+    const cat = this.route.snapshot.queryParamMap.get('categoria');
+    const q: Record<string, number | string> = {};
+    if (this.formData.vehicleId) {
+      q['vehicleId'] = this.formData.vehicleId;
+    }
+    if (cat === 'correctivo' || cat === 'preventivo') {
+      q['categoria'] = cat;
+    }
+    void this.router.navigate(['/maintenance'], { queryParams: Object.keys(q).length ? q : undefined });
   }
 }

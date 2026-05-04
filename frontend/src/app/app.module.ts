@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -14,6 +14,8 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { CardComponent } from './shared/components/card/card.component';
 import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
 
+import { HomeLandingComponent } from './pages/home/home-landing.component';
+
 // Pages
 import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
@@ -25,6 +27,10 @@ import { MaintenanceListComponent } from './pages/maintenance/maintenance-list/m
 import { MaintenanceFormComponent } from './pages/maintenance/maintenance-form/maintenance-form.component';
 import { ReminderListComponent } from './pages/reminders/reminder-list/reminder-list.component';
 import { ReminderFormComponent } from './pages/reminders/reminder-form/reminder-form.component';
+import { UserAdminListComponent } from './pages/users/user-admin-list.component';
+import { UserAdminFormComponent } from './pages/users/user-admin-form.component';
+
+import { MpPlanComponent } from './components/mp-plan/mp-plan.component';
 
 @NgModule({
   declarations: [
@@ -33,6 +39,7 @@ import { ReminderFormComponent } from './pages/reminders/reminder-form/reminder-
     NavbarComponent,
     CardComponent,
     MainLayoutComponent,
+    HomeLandingComponent,
     LoginComponent,
     RegisterComponent,
     DashboardComponent,
@@ -43,11 +50,15 @@ import { ReminderFormComponent } from './pages/reminders/reminder-form/reminder-
     MaintenanceFormComponent,
     ReminderListComponent,
     ReminderFormComponent,
+    UserAdminListComponent,
+    UserAdminFormComponent,
+    MpPlanComponent,
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
     FormsModule,
+    ReactiveFormsModule,
     HttpClientModule,
     AppRoutingModule,
   ],

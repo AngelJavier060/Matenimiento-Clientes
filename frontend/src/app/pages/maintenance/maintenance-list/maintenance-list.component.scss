@@ -9,6 +9,18 @@
   margin-bottom: 24px;
 }
 
+.mcat-chip {
+  flex-shrink: 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgb(74 111 165 / 12%);
+  color: var(--color-primary-dark, #354a73);
+}
+
 .vehicle-select-wrapper {
   flex: 1;
   max-width: 400px;

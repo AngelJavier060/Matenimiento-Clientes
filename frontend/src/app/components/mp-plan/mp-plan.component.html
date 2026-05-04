@@ -1,0 +1,281 @@
+<div class="mp-container">
+  <!-- Page Header -->
+  <div class="mp-header">
+    <div>
+      <nav class="mp-breadcrumb">
+        <span>Mantenimientos</span>
+        <span class="mp-breadcrumb-sep material-symbols-outlined">chevron_right</span>
+        <span class="mp-breadcrumb-active">Preventivo</span>
+      </nav>
+      <h2 class="mp-title">Mantenimientos &mdash; Preventivo</h2>
+    </div>
+    <div class="mp-header-actions">
+      <button class="mp-btn mp-btn-secondary" (click)="mostrarModal = true">
+        <span class="material-symbols-outlined">add</span>
+        Actividad
+      </button>
+      <button class="mp-btn mp-btn-primary">
+        <span class="material-symbols-outlined">check_circle</span>
+        Registrar Servicio
+      </button>
+    </div>
+  </div>
+
+  <div class="mp-grid">
+    <!-- ======= COLUMNA IZQUIERDA: Info vehículo ======= -->
+    <section class="mp-left">
+      <!-- Vehicle Info Card -->
+      <div class="mp-card mp-card-vehicle">
+        <div class="mp-card-accent"></div>
+        <div class="mp-card-head">
+          <h3 class="mp-card-title">Informaci&oacute;n del Veh&iacute;culo</h3>
+          <span class="mp-badge-status">En Servicio</span>
+        </div>
+        <div class="mp-card-body">
+          <!-- Selector superior: dropdown de marcas/modelos registrados -->
+          <div class="mp-brand-selector">
+            <div class="mp-brand-selector-header">
+              <span class="material-symbols-outlined mp-brand-icon">directions_car</span>
+              <select class="mp-brand-select" (change)="seleccionarPlanDesdeSelect(+$any($event.target).value)">
+                <option value="" disabled selected>Seleccionar veh&iacute;culo...</option>
+                <option *ngFor="let item of planList" [value]="item.id" [selected]="item.id === planActivo.id">
+                  {{ item.marca }} {{ item.modelo }} &middot; {{ item.anio }}
+                </option>
+              </select>
+              <span class="material-symbols-outlined mp-chevron-icon">expand_more</span>
+            </div>
+            <div class="mp-brand-summary" *ngIf="planActivo && planActivo.id !== 0">
+              <div class="mp-brand-badge">{{ planActivo.marca }}</div>
+              <div class="mp-brand-detail">{{ planActivo.modelo }} &middot; {{ planActivo.anio }}</div>
+            </div>
+          </div>
+
+          <!-- Formulario para crear/editar plan (marca/modelo/año) -->
+          <div class="mp-plan-form">
+            <div class="mp-info-grid">
+              <div>
+                <label class="mp-label">Marca</label>
+                <input class="mp-input" [(ngModel)]="formMarca" placeholder="Ej: Chevrolet" />
+              </div>
+              <div>
+                <label class="mp-label">Modelo</label>
+                <input class="mp-input" [(ngModel)]="formModelo" placeholder="Ej: Aveo" />
+              </div>
+              <div>
+                <label class="mp-label">A&ntilde;o / Versi&oacute;n</label>
+                <input class="mp-input" [(ngModel)]="formAnio" placeholder="Ej: 2017 1.6L" />
+              </div>
+            </div>
+            <button class="mp-btn mp-btn-primary mp-btn-sm" (click)="guardarPlan()">
+              <span class="material-symbols-outlined">save</span>
+              {{ editandoPlan ? 'Actualizar' : 'Guardar' }}
+            </button>
+            <button *ngIf="editandoPlan" class="mp-btn mp-btn-ghost mp-btn-sm" (click)="cancelarEdicion()">
+              Cancelar
+            </button>
+          </div>
+
+          <!-- Listado de planes guardados -->
+          <div class="mp-plan-list">
+            <label class="mp-label">Planes registrados</label>
+            <div *ngIf="planList.length === 0" class="mp-plan-empty">
+              No hay planes registrados. Ingrese Marca, Modelo y A&ntilde;o y presione Guardar.
+            </div>
+            <div *ngFor="let item of planList" class="mp-plan-item" (click)="seleccionarPlan(item)" [class.mp-plan-item--active]="item.id === planActivo.id">
+              <div class="mp-plan-item-info">
+                <span class="mp-plan-item-brand">{{ item.marca }}</span>
+                <span class="mp-plan-item-detail">{{ item.modelo }} &middot; {{ item.anio }}</span>
+              </div>
+              <div class="mp-plan-item-actions">
+                <button class="mp-plan-btn" title="Editar" (click)="$event.stopPropagation(); editarPlan(item)">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="mp-plan-btn mp-plan-btn--danger" title="Eliminar" (click)="$event.stopPropagation(); eliminarPlan(item.id)">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kilometraje + barra de progreso -->
+          <div class="mp-km-section">
+            <div class="mp-km-row">
+              <div>
+                <label class="mp-label">Kilometraje Actual</label>
+                <div class="mp-km-value">
+                  {{ vehiculoActivo.kmActuales | number }}
+                  <span class="mp-km-unit">km</span>
+                </div>
+              </div>
+              <div class="mp-km-right">
+                <label class="mp-label">Ciclo de Servicio</label>
+                <div class="mp-km-cycle">{{ porcentajeCicloBase }}% <span class="mp-km-unit">del ciclo</span></div>
+              </div>
+            </div>
+            <!-- Progress bar -->
+            <div class="mp-progress-bar">
+              <div class="mp-progress-fill" [style.width.%]="porcentajeCicloBase" [style.background]="colorBarra"></div>
+              <div class="mp-progress-remain" [style.width.%]="100 - porcentajeCicloBase"></div>
+            </div>
+            <div class="mp-progress-labels">
+              <span>{{ intervalosOrdenados[0] | number }} km</span>
+              <span>{{ intervalosOrdenados[1] || intervalosOrdenados[0] * 2 | number }} km</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats mini cards -->
+      <div class="mp-stats-grid">
+        <div class="mp-stat mp-stat-dark">
+          <span class="material-symbols-outlined mp-stat-icon">speed</span>
+          <div>
+            <div class="mp-stat-value">{{ kmPromedioDiario }} <span class="mp-stat-unit">km/d&iacute;a</span></div>
+            <div class="mp-stat-label">Promedio de Uso</div>
+          </div>
+        </div>
+        <div class="mp-stat mp-stat-light">
+          <span class="material-symbols-outlined mp-stat-icon-blue">event</span>
+          <div>
+            <div class="mp-stat-value mp-stat-value-sm">{{ proximaInspeccion }}</div>
+            <div class="mp-stat-label mp-stat-label-blue">Pr&oacute;xima Inspecci&oacute;n</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas -->
+      <div *ngIf="totalVencidos > 0" class="mp-alert mp-alert-danger">
+        <span class="mp-alert-icon mp-alert-icon-danger material-symbols-outlined">error</span>
+        <span><strong>{{ totalVencidos }} actividad(es) vencida(s)</strong> &mdash; revisar de inmediato</span>
+      </div>
+      <div *ngIf="totalProximos > 0" class="mp-alert mp-alert-warning">
+        <span class="mp-alert-icon mp-alert-icon-warning material-symbols-outlined">warning</span>
+        <span><strong>{{ totalProximos }} actividad(es) pr&oacute;xima(s)</strong> &mdash; informar al cliente</span>
+      </div>
+    </section>
+
+    <!-- ======= COLUMNA DERECHA: Intervalos ======= -->
+    <section class="mp-right">
+      <div *ngFor="let km of intervalosOrdenados" class="mp-interval-card">
+        <!-- Header -->
+        <div class="mp-interval-header" (click)="toggleGrupo(km)">
+          <div class="mp-interval-head-left">
+            <div class="mp-interval-icon" [ngClass]="{'mp-interval-icon-active': estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' || estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'}">
+              <span class="material-symbols-outlined">
+                {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'error' : 
+                   estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'warning' : 'check_circle' }}
+              </span>
+            </div>
+            <h3 class="mp-interval-title">Cada {{ km | number }} km &mdash; {{ alertasAgrupadas.get(km)?.[0]?.actividad?.intervaloMeses }} meses</h3>
+          </div>
+          <div class="mp-interval-head-right">
+            <span class="mp-badge-interval" [ngClass]="'mp-badge-interval--' + estadoDelGrupo(alertasAgrupadas.get(km)!)">
+              <span class="material-symbols-outlined mp-badge-icon">
+                {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'error' : 
+                   estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'warning' : 'check_circle' }}
+              </span>
+              {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'Vencido' : 
+                 estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'Pr&oacute;ximo' : 'Al d&iacute;a' }}
+            </span>
+            <span class="mp-chevron" [class.mp-chevron--open]="estaAbierto(km)">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Table body (solo si abierto) -->
+        <div *ngIf="estaAbierto(km)" class="mp-interval-body">
+          <table class="mp-table">
+            <thead>
+              <tr>
+                <th>Actividad de Mantenimiento</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th class="mp-th-actions">Acci&oacute;n</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let alerta of alertasAgrupadas.get(km)" class="mp-tr" [ngClass]="{'mp-tr--vencido': alerta.estado === 'vencido', 'mp-tr--proximo': alerta.estado === 'proximo'}">
+                <td>
+                  <div class="mp-activity-name">
+                    <span class="mp-tipo-badge" [ngClass]="'mp-tipo-badge--' + alerta.actividad.tipo.toLowerCase()">{{ alerta.actividad.tipo }}</span>
+                    {{ alerta.actividad.nombre }}
+                  </div>
+                </td>
+                <td>
+                  <span class="mp-priority">
+                    {{ alerta.estado === 'vencido' ? 'Alta' : alerta.estado === 'proximo' ? 'Media' : 'Baja' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="mp-status-cell">
+                    <span class="mp-dot" [ngClass]="{'mp-dot--red': alerta.estado === 'vencido', 'mp-dot--amber': alerta.estado === 'proximo', 'mp-dot--green': alerta.estado === 'ok'}"></span>
+                    <span>{{ alerta.estado === 'vencido' ? 'Vencido' : alerta.estado === 'proximo' ? 'Pr&oacute;ximo' : 'Al d&iacute;a' }}</span>
+                    <span class="mp-km-remaining">Faltan {{ alerta.kmParaSiguiente | number }} km</span>
+                  </div>
+                </td>
+                <td class="mp-td-actions">
+                  <button class="mp-action-btn" title="Editar">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="intervalosOrdenados.length === 0" class="mp-empty">
+        <span class="material-symbols-outlined mp-empty-icon">build</span>
+        <h3>Sin actividades</h3>
+        <p>No hay actividades definidas para este plan de mantenimiento.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ===================== MODAL NUEVA ACTIVIDAD ===================== -->
+<div class="mp-modal-bg" *ngIf="mostrarModal" (click)="mostrarModal = false">
+  <div class="mp-modal" (click)="$event.stopPropagation()">
+    <div class="mp-modal-header">
+      <h3 class="mp-modal-title">Nueva actividad</h3>
+      <button class="mp-modal-close" (click)="mostrarModal = false">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="mp-modal-body">
+      <div class="mp-field">
+        <label class="mp-label">Nombre de la actividad <span class="mp-req">*</span></label>
+        <input type="text" class="mp-input" placeholder="Ej: Cambio de aceite y filtro" [(ngModel)]="formActividadNombre" />
+      </div>
+      <div class="mp-field">
+        <label class="mp-label">Tipo de operaci&oacute;n</label>
+        <div class="mp-tipo-row">
+          <span *ngFor="let t of tiposOperacion" class="mp-tipo-chip" [class.mp-tipo-chip--sel]="formActividadTipo === t.valor" (click)="formActividadTipo = t.valor">{{ t.valor }} &mdash; {{ t.label }}</span>
+        </div>
+      </div>
+      <div class="mp-field-row">
+        <div class="mp-field">
+          <label class="mp-label">Intervalo km</label>
+          <select class="mp-input" [(ngModel)]="formActividadKm">
+            <option *ngFor="let k of opcionesKm" [value]="k">{{ k | number }} km</option>
+          </select>
+        </div>
+        <div class="mp-field">
+          <label class="mp-label">Intervalo meses</label>
+          <select class="mp-input" [(ngModel)]="formActividadMeses">
+            <option *ngFor="let m of opcionesMeses" [value]="m">{{ m }} meses</option>
+          </select>
+        </div>
+      </div>
+      <div class="mp-modal-hint">
+        Esta actividad se asocia al plan <strong>{{ planActivo.marca }} {{ planActivo.modelo }} ({{ planActivo.anio }})</strong>.
+      </div>
+    </div>
+    <div class="mp-modal-footer">
+      <button class="mp-btn mp-btn-ghost" (click)="mostrarModal = false">Cancelar</button>
+      <button class="mp-btn mp-btn-primary" (click)="guardarActividad()">Guardar actividad</button>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,6 @@
 package com.vehicle.maintenance.dto.auth;
 
+import com.vehicle.maintenance.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,11 @@ public class AuthResponse {
         private Long id;
         private String email;
         private String fullName;
+        private Role role;
+        private String documentId;
         private String phone;
+        private String address;
         private String avatarUrl;
+        private Boolean isActive;
     }
 }

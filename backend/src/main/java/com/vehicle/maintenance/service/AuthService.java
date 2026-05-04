@@ -34,8 +34,19 @@ public class AuthService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
+                .documentId(request.getDocumentId())
+                .address(request.getAddress())
                 .isActive(true)
                 .build();
+
+        // Asignar rol si viene en la solicitud
+        if (request.getRole() != null && !request.getRole().isEmpty()) {
+            try {
+                user.setRole(com.vehicle.maintenance.enums.Role.valueOf(request.getRole()));
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Rol inválido: " + request.getRole());
+            }
+        }
 
         userRepository.save(user);
 
@@ -53,6 +64,10 @@ public class AuthService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("Usuario no encontrado"));
 
+        // Actualizar lastLogin
+        user.setLastLogin(java.time.LocalDateTime.now());
+        userRepository.save(user);
+
         return buildAuthResponse(user);
     }
 
@@ -64,7 +79,7 @@ public class AuthService {
     }
 
     private AuthResponse buildAuthResponse(User user) {
-        var token = jwtService.generateToken(user.getEmail(), user.getId());
+        var token = jwtService.generateToken(user.getEmail(), user.getId(), user.getRole());
 
         return AuthResponse.builder()
                 .token(token)
@@ -74,8 +89,12 @@ public class AuthService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .fullName(user.getFullName())
+                        .role(user.getRole())
+                        .documentId(user.getDocumentId())
                         .phone(user.getPhone())
+                        .address(user.getAddress())
                         .avatarUrl(user.getAvatarUrl())
+                        .isActive(user.getIsActive())
                         .build())
                 .build();
     }

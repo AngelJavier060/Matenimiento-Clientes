@@ -25,15 +25,27 @@ public class VehicleController {
     private final VehicleService vehicleService;
 
     @GetMapping
-    @Operation(summary = "Obtener todos los vehículos del usuario")
+    @Operation(summary = "Obtener todos los vehículos")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
-        return ResponseEntity.ok(vehicleService.getAllVehicles(SecurityUtils.getCurrentUserId()));
+        return ResponseEntity.ok(vehicleService.getAllVehicles());
+    }
+
+    @GetMapping("/by-user/{userId}")
+    @Operation(summary = "Obtener vehículos de un usuario específico")
+    public ResponseEntity<List<VehicleResponse>> getVehiclesByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(vehicleService.getAllVehicles(userId));
+    }
+
+    @GetMapping("/by-client/{clientId}")
+    @Operation(summary = "Obtener vehículos de un cliente")
+    public ResponseEntity<List<VehicleResponse>> getVehiclesByClient(@PathVariable Long clientId) {
+        return ResponseEntity.ok(vehicleService.getVehiclesByClient(clientId));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener vehículo por ID")
     public ResponseEntity<VehicleResponse> getVehicleById(@PathVariable Long id) {
-        return ResponseEntity.ok(vehicleService.getVehicleById(id, SecurityUtils.getCurrentUserId()));
+        return ResponseEntity.ok(vehicleService.getVehicleById(id));
     }
 
     @PostMapping
@@ -48,13 +60,13 @@ public class VehicleController {
     public ResponseEntity<VehicleResponse> updateVehicle(
             @PathVariable Long id,
             @Valid @RequestBody VehicleRequest request) {
-        return ResponseEntity.ok(vehicleService.updateVehicle(id, request, SecurityUtils.getCurrentUserId()));
+        return ResponseEntity.ok(vehicleService.updateVehicle(id, request));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar vehículo (soft delete)")
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
-        vehicleService.deleteVehicle(id, SecurityUtils.getCurrentUserId());
+        vehicleService.deleteVehicle(id);
         return ResponseEntity.noContent().build();
     }
 }

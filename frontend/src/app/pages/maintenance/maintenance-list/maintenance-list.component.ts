@@ -15,6 +15,8 @@ export class MaintenanceListComponent implements OnInit {
   maintenances: MaintenanceResponse[] = [];
   selectedVehicleId: number | null = null;
   loading = false;
+  /** Filtro desde el menú lateral: correctivo | preventivo */
+  filterCategoria: 'correctivo' | 'preventivo' | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -24,19 +26,102 @@ export class MaintenanceListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.vehicleService.getVehicles().subscribe(data => {
+    this.vehicleService.getVehicles().subscribe((data) => {
       this.vehicles = data;
-      const vehicleId = this.route.snapshot.queryParamMap.get('vehicleId');
-      if (vehicleId) {
-        this.selectedVehicleId = Number(vehicleId);
-        this.onVehicleChange(Number(vehicleId));
-      }
+      this.applyRouteParams();
+    });
+
+    this.route.queryParamMap.subscribe(() => this.applyRouteParams());
+  }
+
+  get pageTitle(): string {
+    if (this.filterCategoria === 'correctivo') return 'Mantenimientos · Correctivo';
+    if (this.filterCategoria === 'preventivo') return 'Mantenimientos · Preventivo';
+    return 'Mantenimientos';
+  }
+
+  get displayedMaintenances(): MaintenanceResponse[] {
+    const cat = this.filterCategoria;
+    if (!cat) {
+      return this.maintenances;
+    }
+    return this.maintenances.filter((m) => this.matchesCategoria(m.serviceType, cat));
+  }
+
+  /** Etiqueta del chip de filtro (null si vista general). */
+  get filterLabel(): string | null {
+    if (this.filterCategoria === 'correctivo') return 'Correctivo';
+    if (this.filterCategoria === 'preventivo') return 'Preventivo';
+    return null;
+  }
+
+  private applyRouteParams(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const cat = params.get('categoria');
+    this.filterCategoria = cat === 'correctivo' || cat === 'preventivo' ? cat : null;
+
+    const vehicleIdStr = params.get('vehicleId');
+    if (!vehicleIdStr) {
+      this.selectedVehicleId = null;
+      this.maintenances = [];
+      return;
+    }
+    const vid = Number(vehicleIdStr);
+    if (Number.isNaN(vid)) {
+      return;
+    }
+    if (this.selectedVehicleId !== vid) {
+      this.selectedVehicleId = vid;
+      this.onVehicleChange(vid, false);
+    }
+  }
+
+  /** Filtros cruzados: «correctivo» en URL lista lo que coincide con texto preventivo, y viceversa. */
+  private matchesCategoria(serviceType: string | undefined, cat: 'correctivo' | 'preventivo'): boolean {
+    const t = (serviceType ?? '').trim().toLowerCase();
+    if (!t) {
+      return false;
+    }
+    if (cat === 'correctivo') {
+      return (
+        t.includes('prevent') ||
+        t === 'preventivo' ||
+        t.includes('mantenimiento preventivo')
+      );
+    }
+    return (
+      t.includes('correct') ||
+      t === 'correctivo' ||
+      t.includes('mantenimiento correctivo')
+    );
+  }
+
+  private syncQueryParamsToUrl(vehicleId: number | null): void {
+    const q: Record<string, string | number> = {};
+    if (this.filterCategoria) {
+      q['categoria'] = this.filterCategoria;
+    }
+    if (vehicleId != null) {
+      q['vehicleId'] = vehicleId;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: q,
+      replaceUrl: true
     });
   }
 
-  onVehicleChange(vehicleId: number | null) {
+  /** @param syncUrl cuando false (ya venimos por URL), no reescribe query string */
+  onVehicleChange(vehicleId: number | null, syncUrl = true) {
     this.selectedVehicleId = vehicleId;
-    if (!vehicleId) return;
+    if (syncUrl) {
+      this.syncQueryParamsToUrl(vehicleId);
+    }
+    if (!vehicleId) {
+      this.maintenances = [];
+      this.loading = false;
+      return;
+    }
     this.loading = true;
     this.maintenanceService.getMaintenancesByVehicle(vehicleId).subscribe({
       next: (data) => {
@@ -68,8 +153,16 @@ export class MaintenanceListComponent implements OnInit {
   }
 
   newMaintenance() {
-    const queryParams = this.selectedVehicleId ? { vehicleId: this.selectedVehicleId } : {};
-    this.router.navigate(['/maintenance/new'], { queryParams });
+    const queryParams: Record<string, string | number> = {};
+    if (this.selectedVehicleId) {
+      queryParams['vehicleId'] = this.selectedVehicleId;
+    }
+    if (this.filterCategoria) {
+      queryParams['categoria'] = this.filterCategoria;
+    }
+    void this.router.navigate(['/maintenance/new'], {
+      queryParams: Object.keys(queryParams).length ? queryParams : undefined
+    });
   }
 
   deleteMaintenance(id: number) {

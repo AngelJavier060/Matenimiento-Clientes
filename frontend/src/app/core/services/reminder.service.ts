@@ -11,6 +11,14 @@ export class ReminderService {
 
   constructor(private http: HttpClient) {}
 
+  getUserReminders(): Observable<ReminderResponse[]> {
+    return this.http.get<ReminderResponse[]>(`${this.apiUrl}/reminders`);
+  }
+
+  getDueReminders(): Observable<ReminderResponse[]> {
+    return this.http.get<ReminderResponse[]>(`${this.apiUrl}/reminders/due`);
+  }
+
   getRemindersByVehicle(vehicleId: number): Observable<ReminderResponse[]> {
     return this.http.get<ReminderResponse[]>(
       `${this.apiUrl}/reminders/vehicle/${vehicleId}`

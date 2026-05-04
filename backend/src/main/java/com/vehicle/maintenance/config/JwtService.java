@@ -1,5 +1,6 @@
 package com.vehicle.maintenance.config;
 
+import com.vehicle.maintenance.enums.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -31,9 +32,10 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(String email, Long userId) {
+    public String generateToken(String email, Long userId, Role role) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("userId", userId);
+        extraClaims.put("role", role.name());
         return buildToken(extraClaims, email);
     }
 

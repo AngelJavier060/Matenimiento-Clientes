@@ -11,6 +11,10 @@ export class MaintenanceService {
 
   constructor(private http: HttpClient) {}
 
+  getAllMaintenances(): Observable<MaintenanceResponse[]> {
+    return this.http.get<MaintenanceResponse[]>(`${this.apiUrl}/maintenance`);
+  }
+
   getMaintenancesByVehicle(vehicleId: number): Observable<MaintenanceResponse[]> {
     return this.http.get<MaintenanceResponse[]>(
       `${this.apiUrl}/maintenance/vehicle/${vehicleId}`

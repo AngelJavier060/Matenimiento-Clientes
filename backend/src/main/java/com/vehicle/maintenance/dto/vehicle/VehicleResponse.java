@@ -25,6 +25,9 @@ public class VehicleResponse {
     private FuelType fuelType;
     private TransmissionType transmission;
     private String color;
+    private String imageUrl;
+    private Long clientId;
+    private String clientName;
     private String notes;
     private Boolean isActive;
     private LocalDateTime createdAt;

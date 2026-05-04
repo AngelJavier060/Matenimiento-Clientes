@@ -1,0 +1,217 @@
+<div class="auf">
+  <header class="auf-head">
+        <div class="auf-head__titles">
+      <h1>{{ editMode ? 'Editar usuario' : 'Creación de usuario' }}</h1>
+      <p *ngIf="!editMode">
+        Alta de credenciales del sistema. Configure identidad,
+        rol y permisos de referencia antes de enviar al backend.
+      </p>
+      <p *ngIf="editMode">
+        Modifique los datos del usuario. Deje la contraseña en blanco si no desea cambiarla.
+      </p>
+    </div>
+    <div class="auf-head__pill">{{ editMode ? 'Editando…' : 'Configuración' }}</div>
+  </header>
+
+  <div class="auf-grid">
+    <div class="auf-main">
+      <section class="auf-card glass-panel">
+        <div class="auf-card__bar">
+          <span class="material-symbols-outlined">badge</span>
+          <h2>Identidad de usuario</h2>
+        </div>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auf-form" novalidate>
+          <div class="auf-field auf-field--full">
+            <label for="auf-name">Nombre completo</label>
+            <input
+              id="auf-name"
+              type="text"
+              formControlName="fullName"
+              class="input-underlined"
+              placeholder="Ej. Dr. Mauricio Valenzuela"
+            />
+            <span class="auf-err" *ngIf="form.get('fullName')?.touched && form.get('fullName')?.invalid">
+              Indique el nombre.
+            </span>
+          </div>
+          <div class="auf-field">
+            <label for="auf-email">Correo electrónico corporativo</label>
+            <input
+              id="auf-email"
+              type="email"
+              formControlName="email"
+              class="input-underlined"
+              placeholder="nombre@dominio.com"
+            />
+            <span class="auf-err" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+              Correo no válido.
+            </span>
+          </div>
+          <div class="auf-field">
+            <label for="auf-phone">Celular / teléfono</label>
+            <input id="auf-phone" type="tel" formControlName="phone" class="input-underlined" placeholder="+56 9 1234 5678" />
+          </div>
+          <div class="auf-field auf-field--full">
+            <label for="auf-addr">Dirección</label>
+            <input id="auf-addr" type="text" formControlName="address" class="input-underlined" placeholder="Opcional — no se envía al servidor" />
+          </div>
+
+                    <div class="auf-field auf-field--full">
+            <label for="auf-pass">{{ editMode ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</label>
+            <input
+              id="auf-pass"
+              type="password"
+              formControlName="password"
+              class="input-underlined"
+              autocomplete="new-password"
+              [placeholder]="editMode ? 'Dejar en blanco para mantener' : 'Mínimo 6 caracteres'"
+            />
+            <span class="auf-err" *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['minlength']">
+              Mínimo 6 caracteres.
+            </span>
+            <span class="auf-err" *ngIf="!editMode && form.get('password')?.touched && form.get('password')?.errors?.['required']">
+              La contraseña es obligatoria.
+            </span>
+            <small class="auf-hint" *ngIf="editMode" style="display:block;color:var(--text-secondary);font-size:0.8rem;margin-top:4px;">
+              Si no ingresa una contraseña, se mantendrá la actual.
+            </small>
+          </div>
+          <div class="auf-field auf-field--full">
+            <label for="auf-pass2">Confirmar contraseña</label>
+            <input id="auf-pass2" type="password" formControlName="confirmPassword" class="input-underlined" autocomplete="new-password" [placeholder]="editMode ? 'Solo si cambias la contraseña' : 'Repite la contraseña'" />
+            <span class="auf-err" *ngIf="passwordMismatch()">Las contraseñas no coinciden.</span>
+          </div>
+
+          <div class="auf-rolesauf">
+            <p class="auf-roles-label">Asignación de rol</p>
+            <div class="auf-roles-grid" role="radiogroup">
+              <label class="auf-role-opt" [class.is-on]="form.get('role')?.value === 'SUPER'">
+                <input type="radio" formControlName="role" value="SUPER" />
+                <span class="material-symbols-outlined auf-role-ic">admin_panel_settings</span>
+                <strong>Super usuario</strong>
+                <span class="auf-role-desc">Raíz sobre sistemas críticos (referencia).</span>
+              </label>
+              <label class="auf-role-opt" [class.is-on]="form.get('role')?.value === 'ADMIN'">
+                <input type="radio" formControlName="role" value="ADMIN" />
+                <span class="material-symbols-outlined auf-role-ic auf-role-ic--sec">manage_accounts</span>
+                <strong>Administrador</strong>
+                <span class="auf-role-desc">Clientes y reportes operativos.</span>
+              </label>
+              <label class="auf-role-opt" [class.is-on]="form.get('role')?.value === 'STANDARD'">
+                <input type="radio" formControlName="role" value="STANDARD" />
+                <span class="material-symbols-outlined auf-role-ic auf-role-ic--muted">person</span>
+                <strong>Usuario</strong>
+                <span class="auf-role-desc">Visualización y tareas básicas.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="auf-actions">
+            <button type="button" class="auf-btn-outline" (click)="cancel()" [disabled]="submitting">Cancelar</button>
+            <button type="submit" class="auf-btn-submit" [disabled]="submitting">
+              {{ submitting ? 'Guardando…' : (editMode ? 'Guardar cambios' : 'Generar credenciales') }}
+            </button>
+          </div>
+          <p class="auf-api-err" *ngIf="apiError" role="alert">{{ apiError }}</p>
+        </form>
+      </section>
+
+            <!-- Foto de perfil (ARRIBA) -->
+      <section class="auf-card glass-panel">
+        <div class="auf-card__bar">
+          <span class="material-symbols-outlined">photo_camera</span>
+          <h2>Foto de perfil</h2>
+        </div>
+        <div class="auf-upload">
+                    <div class="auf-upload__preview">
+            <div class="ua-avatar ua-avatar--icon ua-avatar--lg" *ngIf="!previewUrl">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="ua-avatar ua-avatar--img ua-avatar--lg" *ngIf="previewUrl">
+              <img [src]="previewUrl" alt="Foto de perfil" />
+            </div>
+          </div>
+          <div class="auf-upload__controls">
+            <p class="auf-upload__hint">
+              Formatos: JPG, PNG, WEBP. Tamaño máximo: 2MB.
+            </p>
+            <div class="auf-upload__buttons">
+              <label for="avatar-input" class="auf-btn-outline">
+                <span class="material-symbols-outlined">upload</span>
+                {{ avatarUrl ? 'Cambiar foto' : 'Seleccionar foto' }}
+              </label>
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                (change)="onFileSelected($event)"
+                style="display:none"
+              />
+              <button
+                *ngIf="avatarUrl"
+                type="button"
+                class="auf-btn-outline auf-btn-outline--danger"
+                (click)="removeAvatar()"
+              >
+                <span class="material-symbols-outlined">delete</span>
+                Eliminar foto
+              </button>
+            </div>
+            <div class="auf-upload__status" *ngIf="uploading">
+              <span class="material-symbols-outlined">sync</span>
+              Subiendo imagen...
+            </div>
+          </div>
+        </div>
+      </section>
+
+            <!-- Protocolos de permisos (ABAJO) - Solo visual -->
+      <section class="auf-card glass-panel auf-card--perm">
+        <div class="auf-card__bar">
+          <span class="material-symbols-outlined">security</span>
+          <h2>Protocolos de permisos</h2>
+          <span class="auf-hint">Solo para documentación visual; la API vigente usa el rol JWT global.</span>
+        </div>
+        <div class="auf-perm-cols">
+          <div>
+            <h4>Operaciones técnicas</h4>
+            <label class="auf-check"><input type="checkbox" checked disabled /> EJECUTAR_DIAGNOSTICO_IA</label>
+            <label class="auf-check"><input type="checkbox" checked disabled /> MODIFICAR_PARAMETROS_MOTOR</label>
+            <label class="auf-check"><input type="checkbox" disabled /> RESETEO_HISTORICO_DATOS</label>
+          </div>
+          <div>
+            <h4>Gestión de clientes</h4>
+            <label class="auf-check"><input type="checkbox" checked disabled /> LECTURA_REGISTROS_CLIENTE</label>
+            <label class="auf-check"><input type="checkbox" checked disabled /> EDICION_PERFIL_CLIENTE</label>
+            <label class="auf-check"><input type="checkbox" disabled /> ELIMINACION_USUARIOS</label>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="auf-aside">
+      <div class="auf-vis">
+        <img
+          alt=""
+          src="https://lh3.googleusercontent.com/aida/ADBb0uhEINwbbidQ6jdpxLJahC9qmAb2rGtnNq5pirzQc2n6hnPiry4FP4zhpplJqSyg8AeGItZQx_asyZnSda7xbtjgjo2xCBVyuG3VuWHBwFwrf_iECuussEKJHCYeA9Q2v0MRLWhE1hJoWFFeXimflN-ctmMEsq6lRwGdphKhfE_iciPgHqpV9OdGrhSQWr1OP58PG0WXBZYlJUEOFmcD6knhXpl5xsxicllY8EoJwKYT3PjOYsnEEze2hCeOi53c8ss7dQPZ1suk"
+        />
+        <div class="auf-vis__copy">
+          <h3>Integridad de datos</h3>
+          <p>Las nuevas cuentas se validan mediante el mismo endpoint seguro que el registro público, sin cerrar tu sesión de administrador.</p>
+        </div>
+      </div>
+      <div class="auf-spec glass-panel">
+        <div class="auf-spec-head">
+          <span class="material-symbols-outlined">info</span>
+          <span>Estado del sistema</span>
+        </div>
+        <ul>
+          <li><span>Módulo</span><span>Creación vía POST /auth/register</span></li>
+          <li><span>Sesión admin</span><span>Mantenida</span></li>
+        </ul>
+      </div>
+        </aside>
+  </div>
+
+  <a routerLink="/users" class="auf-back">&larr; Volver al directorio</a>
+</div>

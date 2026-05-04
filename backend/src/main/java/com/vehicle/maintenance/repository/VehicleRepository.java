@@ -14,5 +14,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     Optional<Vehicle> findByIdAndUserId(Long id, Long userId);
 
+    List<Vehicle> findByIsActiveTrueOrderByCreatedAtDesc();
+
+    List<Vehicle> findByClientIdAndIsActiveTrueOrderByCreatedAtDesc(Long clientId);
+
     boolean existsByLicensePlate(String licensePlate);
 }

@@ -8,6 +8,8 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
+  readonly year = new Date().getFullYear();
+
   email = '';
   password = '';
   loading = false;

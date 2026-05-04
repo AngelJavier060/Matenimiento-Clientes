@@ -1,85 +1,209 @@
-<app-navbar title="Mis Vehículos">
-  <button class="btn-icon" (click)="loadVehicles()" title="Actualizar">
-    <span class="material-icons-round">refresh</span>
-  </button>
-</app-navbar>
+<div class="vl">
+  <!-- Barra contextual (dentro del layout principal; sin duplicar sidebar) -->
+  <header class="vl-top glass-panel">
+    <div class="vl-top__titles">
+      <h1 class="vl-top__h1">Directorio de vehículos</h1>
+      <p class="vl-top__sub">Control centralizado de unidades y datos del titular registrado.</p>
+    </div>
+    <div class="vl-top__actions">
+      <div class="vl-search">
+        <span class="material-symbols-outlined">search</span>
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar por placa o VIN..."
+          autocomplete="off"
+        />
+      </div>
+      <button type="button" class="vl-icon-btn" title="Notificaciones">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+      <button type="button" class="vl-avatar-mini" title="Titular registrado">
+        <img [src]="headerAvatarUrl" alt="" />
+      </button>
+    </div>
+  </header>
 
-<div class="page-content">
-  <!-- Filters -->
-  <div class="filters-bar">
-    <div class="search-wrapper">
-      <span class="material-icons-round">search</span>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar vehículo..." class="search-input">
+  <section class="vl-kpis" *ngIf="!loading" aria-label="Indicadores de flota">
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--primary">
+        <span class="material-symbols-outlined">directions_car</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiTotal }}</span>
+        <span class="vl-kpi__lab">Vehículos registrados</span>
+      </div>
+    </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--ok">
+        <span class="material-symbols-outlined">check_circle</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiOperativos }}</span>
+        <span class="vl-kpi__lab">Operativos</span>
+      </div>
+    </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--warn">
+        <span class="material-symbols-outlined">build</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiEnMantenimiento }}</span>
+        <span class="vl-kpi__lab">En mantenimiento</span>
+      </div>
+    </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--muted">
+        <span class="material-symbols-outlined">pause_circle</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiInactivos }}</span>
+        <span class="vl-kpi__lab">Inactivos</span>
+      </div>
+    </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--info">
+        <span class="material-symbols-outlined">history</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiRegistrosMantenimiento }}</span>
+        <span class="vl-kpi__lab">Eventos de mantenimiento</span>
+      </div>
+    </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--accent">
+        <span class="material-symbols-outlined">category</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiMarcas }}</span>
+        <span class="vl-kpi__lab">Marcas en flota</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="vl-filters">
+    <div class="vl-filter-field">
+      <span class="vl-filter-label">Marca</span>
+      <select [(ngModel)]="filterBrand" class="vl-select">
+        <option value="">Todas las marcas</option>
+        <option *ngFor="let b of brandOptions" [value]="b">{{ b }}</option>
+      </select>
     </div>
-    <div class="filter-buttons">
-      <button [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">Todos</button>
-      <button [class.active]="filterStatus === 'active'" (click)="filterStatus = 'active'">Activos</button>
-      <button [class.active]="filterStatus === 'inactive'" (click)="filterStatus = 'inactive'">Inactivos</button>
+    <div class="vl-filter-field">
+      <span class="vl-filter-label">Estado</span>
+      <select [(ngModel)]="filterFleetState" class="vl-select">
+        <option value="">Cualquier estado</option>
+        <option value="OPERATIVO">Operativo</option>
+        <option value="MANTENIMIENTO">En mantenimiento</option>
+        <option value="INACTIVO">Inactivo</option>
+      </select>
     </div>
-    <button class="btn-primary" (click)="newVehicle()">
-      <span class="material-icons-round">add</span>
-      Agregar
+    <div class="vl-filter-field">
+      <span class="vl-filter-label">Combustible</span>
+      <select [(ngModel)]="filterFuel" class="vl-select">
+        <option value="">Todos</option>
+        <option value="GASOLINE">Gasolina</option>
+        <option value="DIESEL">Diesel</option>
+        <option value="HYBRID">Híbrido</option>
+        <option value="ELECTRIC">Eléctrico</option>
+        <option value="LPG">GLP</option>
+        <option value="CNG">GNC</option>
+      </select>
+    </div>
+    <button type="button" class="vl-btn-apply" (click)="applyFilters()">
+      <span class="material-symbols-outlined">filter_list</span>
+      Aplicar filtros
+    </button>
+  </section>
+
+  <div *ngIf="loading" class="vl-loading">
+    <div class="vl-spinner"></div>
+  </div>
+
+  <section *ngIf="!loading && filteredVehicles.length > 0" class="vl-grid">
+    <article
+      class="vl-card"
+      *ngFor="let v of filteredVehicles; let i = index"
+      (click)="viewDetail(v.id)"
+    >
+      <div class="vl-card__hero">
+        <div class="vl-card__imgwrap">
+          <img *ngIf="v.imageUrl" [src]="backendImage(v.imageUrl)" alt="{{ v.brand }} {{ v.model }}" loading="lazy" />
+          <div *ngIf="!v.imageUrl" class="vl-card__img-placeholder">
+            <span class="material-symbols-outlined">directions_car</span>
+          </div>
+          <span class="vl-card__ref">{{ refLabel(v.id) }}</span>
+        </div>
+        <div class="vl-card__body">
+          <div class="vl-card__headrow">
+            <div class="vl-card__titles-block">
+              <h3>{{ v.brand }} {{ v.model }}</h3>
+              <p class="vl-plateyear">
+                Placa: {{ v.licensePlate || '—' }}<span *ngIf="v.year"> • {{ v.year }}</span>
+              </p>
+            </div>
+            <div class="vl-card__head-right">
+              <span [class]="fleetStateClass(v)">{{ fleetStateLabel(v) }}</span>
+              <div class="vl-mini-actions">
+                <button type="button" class="vl-mini-ico" (click)="editVehicle(v.id, $event)" title="Editar">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="vl-mini-ico vl-mini-ico--danger" (click)="deleteVehicle(v.id, $event)" title="Eliminar">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="vl-owner">
+            <span class="material-symbols-outlined">person</span>
+            <span class="vl-owner-name">{{ v.clientName || ownerDisplayName }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="vl-card__metrics">
+        <div class="vl-metric">
+          <span>VIN</span>
+          <strong>{{ vinShort(v) }}</strong>
+        </div>
+        <div class="vl-metric">
+          <span>Kilometraje</span>
+          <strong>{{ formatKm(v) }}</strong>
+        </div>
+        <div class="vl-metric">
+          <span>Últ. servicio</span>
+          <strong>{{ lastServiceLabel(v) }}</strong>
+        </div>
+      </div>
+      <div class="vl-card__cta">
+        <button type="button" class="vl-cta vl-cta--primary" (click)="history(v.id, $event)">
+          <span class="material-symbols-outlined">history</span>
+          Ver historial
+        </button>
+        <button type="button" class="vl-cta vl-cta--ghost" (click)="viewDetail(v.id); $event.stopPropagation()">
+          <span class="material-symbols-outlined">description</span>
+          Ficha técnica
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <div *ngIf="!loading && filteredVehicles.length === 0" class="vl-empty">
+    <span class="material-symbols-outlined vl-empty-icon">directions_car</span>
+    <h3 *ngIf="searchTerm || filterBrand || filterFuel || filterFleetState">Sin resultados con estos filtros</h3>
+    <h3 *ngIf="!searchTerm && !filterBrand && !filterFuel && !filterFleetState">No hay vehículos en el directorio</h3>
+    <p>Registra un vehículo desde el flujo de cliente o añade uno nuevo.</p>
+    <button type="button" class="vl-btn-new vl-btn-new--solo" (click)="newVehicle()">
+      <span class="material-symbols-outlined">add</span>
+      Añadir vehículo
     </button>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-state">
-    <div class="spinner-lg"></div>
-  </div>
-
-  <!-- Vehicles Grid -->
-  <div *ngIf="!loading && filteredVehicles.length > 0" class="vehicles-grid">
-    <div class="vehicle-card" *ngFor="let v of filteredVehicles"
-         (click)="viewDetail(v.id)">
-      <div class="vehicle-card-header">
-        <div class="vehicle-avatar">
-          <span class="material-icons-round">directions_car</span>
-        </div>
-        <div class="vehicle-actions">
-          <button class="btn-action" (click)="editVehicle(v.id, $event)" title="Editar">
-            <span class="material-icons-round">edit</span>
-          </button>
-          <button class="btn-action delete" (click)="deleteVehicle(v.id, $event)" title="Eliminar">
-            <span class="material-icons-round">delete</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="vehicle-card-body">
-        <h3>{{ v.brand }} {{ v.model }}</h3>
-        <p class="vehicle-year">{{ v.year }}</p>
-        <div class="vehicle-details">
-          <span *ngIf="v.licensePlate" class="vehicle-tag">
-            <span class="material-icons-round">confirmation_number</span>
-            {{ v.licensePlate }}
-          </span>
-          <span class="vehicle-tag">
-            <span class="material-icons-round">speed</span>
-            {{ v.mileage || 0 }} km
-          </span>
-        </div>
-      </div>
-
-      <div class="vehicle-card-footer">
-        <span class="status-badge" [class.active]="v.isActive">
-          {{ v.isActive ? 'Activo' : 'Inactivo' }}
-        </span>
-        <span class="maintenance-count">
-          {{ v.maintenanceCount }} mantenimientos
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Empty State -->
-  <div *ngIf="!loading && filteredVehicles.length === 0" class="empty-state">
-    <span class="material-icons-round empty-icon">directions_car</span>
-    <h3 *ngIf="searchTerm || filterStatus !== 'all'">Sin resultados</h3>
-    <h3 *ngIf="!searchTerm && filterStatus === 'all'">No tienes vehículos registrados</h3>
-    <p>Agrega tu primer vehículo para empezar</p>
-    <button class="btn-primary" (click)="newVehicle()">
-      <span class="material-icons-round">add</span>
-      Agregar Vehículo
-    </button>
-  </div>
+  <footer class="vl-foot">
+    <span>© 2026 Improvement Solution. Advanced Engineering &amp; AI Maintenance.</span>
+    <nav aria-label="Legal">
+      <a href="#">Privacidad</a>
+      <a href="#">Términos</a>
+      <a href="#">Soporte</a>
+    </nav>
+  </footer>
 </div>

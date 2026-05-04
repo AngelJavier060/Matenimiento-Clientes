@@ -1,101 +1,288 @@
-<div class="auth-container">
-  <div class="auth-left">
-    <div class="auth-brand">
-      <span class="material-icons-round brand-icon">person_add</span>
-      <div class="brand-text">
-        <h1>Crear</h1>
-        <span>Cuenta</span>
-      </div>
+<div class="cl">
+  <!-- Header con KPIs -->
+  <header class="cl-top">
+    <div class="cl-top__titles">
+      <h1 class="cl-top__h1">Panel de clientes</h1>
+      <p class="cl-top__sub">Gestión centralizada de cuentas, vehículos y servicios.</p>
     </div>
-    <div class="auth-illustration">
-      <div class="illustration-card">
-        <span class="material-icons-round">verified</span>
-        <p>Registro rápido y seguro</p>
+    <div class="cl-top__actions">
+      <div class="cl-search">
+        <span class="material-symbols-outlined">search</span>
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar por nombre, email o teléfono..."
+          autocomplete="off"
+        />
       </div>
-      <div class="illustration-card delay-1">
-        <span class="material-icons-round">cloud_sync</span>
-        <p>Tus datos siempre sincronizados</p>
-      </div>
-      <div class="illustration-card delay-2">
-        <span class="material-icons-round">support_agent</span>
-        <p>Soporte técnico 24/7</p>
-      </div>
+      <button type="button" class="cl-btn-new" (click)="openModal()">
+        <span class="material-symbols-outlined">person_add</span>
+        Nuevo registro
+      </button>
     </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="cl-kpis" *ngIf="!loading" aria-label="Indicadores">
+    <article class="cl-kpi">
+      <div class="cl-kpi__icon cl-kpi__icon--primary">
+        <span class="material-symbols-outlined">group</span>
+      </div>
+      <div class="cl-kpi__text">
+        <span class="cl-kpi__val">{{ clients.length }}</span>
+        <span class="cl-kpi__lab">Total clientes registrados</span>
+      </div>
+    </article>
+    <article class="cl-kpi">
+      <div class="cl-kpi__icon cl-kpi__icon--ok">
+        <span class="material-symbols-outlined">check_circle</span>
+      </div>
+      <div class="cl-kpi__text">
+        <span class="cl-kpi__val">{{ kpiActivos }}</span>
+        <span class="cl-kpi__lab">Clientes activos</span>
+      </div>
+    </article>
+    <article class="cl-kpi">
+      <div class="cl-kpi__icon cl-kpi__icon--info">
+        <span class="material-symbols-outlined">person_add</span>
+      </div>
+      <div class="cl-kpi__text">
+        <span class="cl-kpi__val">{{ kpiNuevos }}</span>
+        <span class="cl-kpi__lab">Nuevos (último mes)</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="cl-loading">
+    <div class="cl-spinner"></div>
   </div>
 
-  <div class="auth-right">
-    <div class="auth-form-container">
-      <div class="auth-header">
-        <h2>Crear Cuenta</h2>
-        <p>Completa tus datos para registrarte</p>
+  <!-- Lista de clientes -->
+  <section *ngIf="!loading && filteredClients.length > 0" class="cl-grid">
+    <article class="cl-card" *ngFor="let c of filteredClients">
+      <div class="cl-card__hero">
+        <div class="cl-card__img-col">
+          <div class="cl-avatar" [ngClass]="c.status === 'activo' ? 'cl-avatar--ok' : 'cl-avatar--off'">
+            <div class="cl-avatar__initials">
+              {{ initials(c.fullName) }}
+            </div>
+          </div>
+          <!-- Foto del vehiculo del cliente -->
+          <div class="cl-mini-vehicle-img" *ngIf="clientVehicleImage(c.id)">
+            <img [src]="clientVehicleImage(c.id)" alt="Vehiculo" />
+          </div>
+          <div class="cl-mini-vehicle-img cl-mini-vehicle-img--empty" *ngIf="!clientVehicleImage(c.id)">
+            <span class="material-symbols-outlined">directions_car</span>
+          </div>
+        </div>
+        <div class="cl-card__body">
+          <!-- Fila superior: nombre + badge + acciones -->
+          <div class="cl-card__headrow">
+            <div class="cl-card__titles-block">
+              <h3 class="cl-card__name">{{ c.fullName }}</h3>
+            </div>
+            <div class="cl-card__head-right">
+              <span class="cl-badge {{ statusClass(c) }}">{{ statusLabel(c) }}</span>
+              <div class="cl-mini-actions">
+                <button type="button" class="cl-mini-ico" (click)="openEditModal(c); $event.stopPropagation()" title="Editar cliente">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="cl-mini-ico" (click)="viewVehicles(c.id)" title="Ver vehículos">
+                  <span class="material-symbols-outlined">directions_car</span>
+                </button>
+                <button type="button" class="cl-mini-ico cl-mini-ico--danger" (click)="deleteClient(c.id, $event)" title="Eliminar">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Fila placa del vehículo -->
+          <p class="cl-placa" *ngIf="clientVehiclePlate(c.id)">
+            <span class="material-symbols-outlined">badge</span>
+            {{ clientVehiclePlate(c.id) }}
+          </p>
+          <!-- Fila separada para el email -->
+          <p class="cl-email">{{ c.email }}</p>
+        </div>
+      </div>
+      <div class="cl-card__metrics">
+        <div class="cl-metric">
+          <span>Teléfono</span>
+          <strong>{{ c.phone || '—' }}</strong>
+        </div>
+        <div class="cl-metric">
+          <span>Estado</span>
+          <strong>{{ statusLabel(c) }}</strong>
+        </div>
+        <div class="cl-metric">
+          <span>Vehículos</span>
+          <strong>{{ clientVehicleCount(c.id) }} unidad(es)</strong>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && filteredClients.length === 0" class="cl-empty">
+    <span class="material-symbols-outlined cl-empty-icon">group_off</span>
+    <h3 *ngIf="searchTerm">Sin resultados con ese filtro</h3>
+    <h3 *ngIf="!searchTerm">No hay clientes registrados aún</h3>
+    <p>Registra tu primer cliente para comenzar.</p>
+    <button type="button" class="cl-btn-new cl-btn-new--solo" (click)="openModal()">
+      <span class="material-symbols-outlined">person_add</span>
+      Nuevo registro
+    </button>
+  </div>
+
+  <!-- Modal de registro flotante -->
+  <div class="cl-modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="cl-modal" (click)="$event.stopPropagation()">
+      <div class="cl-modal__head">
+        <div class="cl-modal__head-titles">
+          <h2>{{ editingClient ? 'Editar cliente' : 'Nuevo registro de cliente' }}</h2>
+          <p>{{ editingClient ? 'Modifica los datos del cliente.' : 'Alta simultánea de cliente y unidad vehicular (opcional).' }}</p>
+        </div>
+        <button type="button" class="cl-modal__close" (click)="closeModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
-      <form (ngSubmit)="onSubmit()" class="auth-form">
-        <div class="form-row">
-          <div class="form-group flex-2">
-            <label>Nombre completo *</label>
-            <div class="input-wrapper">
-              <span class="material-icons-round input-icon">person</span>
-              <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Juan Pérez" required>
-            </div>
+      <form (ngSubmit)="onSubmit()" class="cl-modal__form" novalidate>
+        <div class="cl-modal__grid">
+          <!-- Columna cliente -->
+          <div class="cl-modal__col">
+            <fieldset class="cl-fieldset">
+              <legend>
+                <span class="material-symbols-outlined">person</span>
+                Datos del cliente
+              </legend>
+              <div class="cl-field">
+                <label>Nombre completo *</label>
+                <input type="text" [(ngModel)]="clientFullName" name="cName" placeholder="Ej. Roberto Mendoza" />
+              </div>
+              <div class="cl-field">
+                <label>Teléfono *</label>
+                <input type="tel" [(ngModel)]="phone" name="cPhone" placeholder="+56 9 1234 5678" />
+              </div>
+              <div class="cl-field">
+                <label>Correo electrónico *</label>
+                <input type="email" [(ngModel)]="email" name="cEmail" placeholder="cliente@dominio.com" />
+              </div>
+              <div class="cl-field">
+                <label>Dirección</label>
+                <input type="text" [(ngModel)]="address" name="cAddr" placeholder="Calle, número, ciudad" />
+              </div>
+              <div class="cl-field">
+                <label>Notas del cliente</label>
+                <textarea [(ngModel)]="clientNotes" name="cNotes" rows="3" placeholder="Observaciones…"></textarea>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Columna vehículo -->
+          <div class="cl-modal__col">
+            <fieldset class="cl-fieldset">
+              <legend>
+                <span class="material-symbols-outlined">directions_car</span>
+                Información del vehículo
+              </legend>
+              <div class="cl-field-row">
+                <div class="cl-field">
+                  <label>Marca</label>
+                  <input type="text" [(ngModel)]="vBrand" name="vBrand" placeholder="Porsche" />
+                </div>
+                <div class="cl-field">
+                  <label>Modelo</label>
+                  <input type="text" [(ngModel)]="vModel" name="vModel" placeholder="911 Carrera S" />
+                </div>
+              </div>
+              <div class="cl-field-row">
+                <div class="cl-field">
+                  <label>Año</label>
+                  <input type="number" [(ngModel)]="vYear" name="vYear" placeholder="2024" min="1900" max="2030" />
+                </div>
+                <div class="cl-field">
+                  <label>Placa</label>
+                  <input type="text" [(ngModel)]="vPlate" name="vPlate" placeholder="ABC-123" />
+                </div>
+              </div>
+              <div class="cl-field-row">
+                <div class="cl-field">
+                  <label>VIN</label>
+                  <input type="text" [(ngModel)]="vVin" name="vVin" maxlength="17" placeholder="17 caracteres" />
+                </div>
+                <div class="cl-field">
+                  <label>Color</label>
+                  <input type="text" [(ngModel)]="vColor" name="vColor" placeholder="Gris Nardo" />
+                </div>
+              </div>
+              <div class="cl-field-row">
+                <div class="cl-field">
+                  <label>Kilometraje</label>
+                  <input type="number" [(ngModel)]="vMileage" name="vMileage" min="0" placeholder="0" />
+                </div>
+                <div class="cl-field">
+                  <label>Combustible</label>
+                  <select [(ngModel)]="vFuel" name="vFuel">
+                    <option value="GASOLINE">Gasolina</option>
+                    <option value="DIESEL">Diesel</option>
+                    <option value="HYBRID">Híbrido</option>
+                    <option value="ELECTRIC">Eléctrico</option>
+                    <option value="LPG">GLP</option>
+                    <option value="CNG">GNC</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cl-field-row">
+                <div class="cl-field">
+                  <label>Transmisión</label>
+                  <select [(ngModel)]="vTransmission" name="vTr">
+                    <option value="AUTOMATIC">Automática</option>
+                    <option value="MANUAL">Manual</option>
+                    <option value="CVT">CVT</option>
+                    <option value="DCT">DCT</option>
+                  </select>
+                </div>
+                <div class="cl-field">
+                  <label>Notas</label>
+                  <textarea [(ngModel)]="vEngineeringNotes" name="vNotes" rows="3" placeholder="Modificaciones, fallos..."></textarea>
+                </div>
+              </div>
+              <!-- Foto vehículo -->
+              <div class="cl-photo-area">
+                <label>Foto del vehículo (opcional)</label>
+                <div class="cl-photo-upload">
+                  <div class="cl-photo-preview" *ngIf="vPreviewUrl">
+                    <img [src]="vPreviewUrl" alt="" />
+                  </div>
+                  <div class="cl-photo-placeholder" *ngIf="!vPreviewUrl">
+                    <span class="material-symbols-outlined">add_a_photo</span>
+                  </div>
+                  <label for="v-photo-input" class="cl-photo-btn">
+                    <span class="material-symbols-outlined">upload</span>
+                    Subir foto
+                  </label>
+                  <input id="v-photo-input" type="file" accept="image/jpeg,image/png,image/webp" (change)="onVehicleFileSelected($event)" style="display:none" />
+                </div>
+              </div>
+            </fieldset>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group flex-2">
-            <label>Correo electrónico *</label>
-            <div class="input-wrapper">
-              <span class="material-icons-round input-icon">email</span>
-              <input type="email" [(ngModel)]="email" name="email" placeholder="tu@correo.com" required>
-            </div>
-          </div>
-          <div class="form-group flex-1">
-            <label>Teléfono</label>
-            <div class="input-wrapper">
-              <span class="material-icons-round input-icon">phone</span>
-              <input type="tel" [(ngModel)]="phone" name="phone" placeholder="+51">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group flex-1">
-            <label>Contraseña *</label>
-            <div class="input-wrapper">
-              <span class="material-icons-round input-icon">lock</span>
-              <input [type]="hidePassword ? 'password' : 'text'" [(ngModel)]="password" name="password" placeholder="••••••" required>
-              <button type="button" class="toggle-password" (click)="hidePassword = !hidePassword">
-                <span class="material-icons-round">{{ hidePassword ? 'visibility_off' : 'visibility' }}</span>
-              </button>
-            </div>
-          </div>
-          <div class="form-group flex-1">
-            <label>Confirmar *</label>
-            <div class="input-wrapper">
-              <span class="material-icons-round input-icon">lock</span>
-              <input [type]="hideConfirm ? 'password' : 'text'" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="••••••" required>
-              <button type="button" class="toggle-password" (click)="hideConfirm = !hideConfirm">
-                <span class="material-icons-round">{{ hideConfirm ? 'visibility_off' : 'visibility' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-error" *ngIf="error">
-          <span class="material-icons-round">error</span>
+        <p class="cl-form-error" *ngIf="error" role="alert">
+          <span class="material-symbols-outlined">error</span>
           {{ error }}
+        </p>
+
+        <div class="cl-modal__actions">
+          <button type="button" class="cl-btn-cancel" (click)="closeModal()" [disabled]="submitting">Cancelar</button>
+          <button type="submit" class="cl-btn-save" [disabled]="submitting">
+            <span class="material-symbols-outlined">save</span>
+            {{ submitting ? 'Guardando…' : 'Guardar registro' }}
+          </button>
         </div>
-
-        <button type="submit" class="btn-submit" [disabled]="loading">
-          <span *ngIf="!loading">Crear Cuenta</span>
-          <span *ngIf="loading" class="spinner"></span>
-        </button>
       </form>
-
-      <p class="auth-footer-text">
-        ¿Ya tienes cuenta?
-        <a routerLink="/login">Inicia sesión</a>
-      </p>
     </div>
   </div>
 </div>

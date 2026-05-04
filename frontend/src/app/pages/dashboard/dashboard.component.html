@@ -1,106 +1,300 @@
-<app-navbar title="Dashboard" [subtitle]="'Bienvenido, ' + (user?.fullName || 'Usuario')">
-  <button class="btn-icon" (click)="loadVehicles()" title="Actualizar">
-    <span class="material-icons-round">refresh</span>
-  </button>
-</app-navbar>
-
-<div class="dashboard-content">
-  <!-- Stats Grid -->
-  <div class="stats-grid">
-    <div class="stat-card animate-fade-in-up stagger-1">
-      <div class="stat-icon vehicles">
-        <span class="material-icons-round">directions_car</span>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ vehicles.length }}</span>
-        <span class="stat-label">Vehículos</span>
-      </div>
+<div class="db">
+  <header class="db-header">
+    <div class="db-header__text">
+      <h2 class="db-header__title">Panel de Control</h2>
+      <p class="db-header__sub">
+        Bienvenido, {{ user?.fullName || 'Usuario' }} ·
+        <span class="db-header__tag">V-Engine v2.4</span>
+      </p>
     </div>
-
-    <div class="stat-card animate-fade-in-up stagger-2">
-      <div class="stat-icon active">
-        <span class="material-icons-round">check_circle</span>
+    <div class="db-header__actions">
+      <div class="db-header__status" *ngIf="!loading">
+        <span class="db-status-dot"></span>
+        SISTEMA ONLINE
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ activeVehicles }}</span>
-        <span class="stat-label">Activos</span>
-      </div>
+      <button type="button" class="db-icon-btn" (click)="loadDashboard()" title="Actualizar">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
     </div>
+  </header>
 
-    <div class="stat-card animate-fade-in-up stagger-3">
-      <div class="stat-icon maintenance">
-        <span class="material-icons-round">build</span>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ totalMaintenances }}</span>
-        <span class="stat-label">Mantenimientos</span>
-      </div>
-    </div>
+  <div class="db-inner" *ngIf="!loading">
+    <!-- Métricas -->
+    <section class="db-metrics" aria-label="Resumen">
+      <article class="db-metric-card">
+        <div class="db-metric-card__ico db-metric-card__ico--primary">
+          <span class="material-symbols-outlined">airport_shuttle</span>
+        </div>
+        <div>
+          <span class="db-metric-card__value">{{ vehicles.length }}</span>
+          <span class="db-metric-card__label">Vehículos</span>
+        </div>
+      </article>
+      <article class="db-metric-card">
+        <div class="db-metric-card__ico db-metric-card__ico--green">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <div>
+          <span class="db-metric-card__value">{{ activeVehicles }}</span>
+          <span class="db-metric-card__label">Activos</span>
+        </div>
+      </article>
+      <article class="db-metric-card">
+        <div class="db-metric-card__ico db-metric-card__ico--teal">
+          <span class="material-symbols-outlined">engineering</span>
+        </div>
+        <div>
+          <span class="db-metric-card__value">{{ inWorkshopCount }}</span>
+          <span class="db-metric-card__label">En taller</span>
+        </div>
+      </article>
+      <article class="db-metric-card">
+        <div class="db-metric-card__ico db-metric-card__ico--alert">
+          <span class="material-symbols-outlined">warning</span>
+        </div>
+        <div>
+          <span class="db-metric-card__value">{{ alertsCount }}</span>
+          <span class="db-metric-card__label">Alertas</span>
+        </div>
+      </article>
+    </section>
 
-    <div class="stat-card animate-fade-in-up stagger-4">
-      <div class="stat-icon reminders">
-        <span class="material-icons-round">notifications</span>
+    <!-- Analytics -->
+    <section class="db-analytics" aria-label="Analíticas">
+      <div class="db-chart-card">
+        <div class="db-chart-card__head">
+          <div>
+            <h3 class="db-section-title db-section-title--nomargin">Actividad de Mantenimiento</h3>
+            <p class="db-muted">
+              Mantenimientos por mes según <strong>fecha de servicio</strong> en tus registros
+            </p>
+          </div>
+          <select
+            class="db-select"
+            [(ngModel)]="chartMonths"
+            (change)="onChartRangeChange()"
+            title="Periodo del gráfico"
+          >
+            <option [ngValue]="6">Últimos 6 meses</option>
+            <option [ngValue]="12">Último año</option>
+          </select>
+        </div>
+        <div class="db-chart" role="img" [attr.aria-label]="'Distribución mensual de mantenimientos'">
+          <div class="db-chart__col" *ngFor="let bar of chartBars">
+            <div class="db-chart__track">
+              <div class="db-chart__fill-wrap" [class.db-chart__fill-wrap--empty]="bar.count === 0">
+                <div class="db-chart__fill" [style.height.%]="bar.heightPct"></div>
+              </div>
+              <span class="db-chart__tip" *ngIf="bar.count > 0">{{ bar.count }}</span>
+            </div>
+            <span class="db-chart__label">{{ bar.label }}</span>
+          </div>
+        </div>
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ vehicles.length * 2 }}</span>
-        <span class="stat-label">Recordatorios</span>
+
+      <aside class="db-kpi-panel" aria-label="Indicadores técnicos">
+        <div class="db-kpi-panel__decor" aria-hidden="true">
+          <span class="material-symbols-outlined">speed</span>
+        </div>
+        <div>
+          <h3 class="db-kpi-panel__title">KPIs técnicos</h3>
+          <p class="db-kpi-panel__sub">Derivados de tus registros en tiempo real</p>
+        </div>
+        <div class="db-kpi-panel__rows">
+          <div class="db-gauge">
+            <div class="db-gauge__ring">
+              <svg class="db-gauge__svg" viewBox="0 0 36 36" aria-hidden="true">
+                <path
+                  class="db-gauge__track"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke-width="3"
+                />
+                <path
+                  class="db-gauge__arc db-gauge__arc--cyan"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
+                  fill="none"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="efficiencyGauge + ', 100'"
+                />
+              </svg>
+              <span class="db-gauge__pct">{{ efficiencyGauge }}%</span>
+            </div>
+            <div>
+              <p class="db-gauge__name">Eficiencia</p>
+              <p class="db-gauge__hint">Completados / total mantenimientos</p>
+            </div>
+          </div>
+          <div class="db-gauge">
+            <div class="db-gauge__ring">
+              <svg class="db-gauge__svg" viewBox="0 0 36 36" aria-hidden="true">
+                <path
+                  class="db-gauge__track"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke-width="3"
+                />
+                <path
+                  class="db-gauge__arc db-gauge__arc--green"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
+                  fill="none"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="healthGauge + ', 100'"
+                />
+              </svg>
+              <span class="db-gauge__pct">{{ healthGauge }}%</span>
+            </div>
+            <div>
+              <p class="db-gauge__name">Salud flota</p>
+              <p class="db-gauge__hint">Vehículos activos / total</p>
+            </div>
+          </div>
+          <div class="db-gauge">
+            <div class="db-gauge__ring">
+              <svg class="db-gauge__svg" viewBox="0 0 36 36" aria-hidden="true">
+                <path
+                  class="db-gauge__track"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke-width="3"
+                />
+                <path
+                  class="db-gauge__arc db-gauge__arc--lavender"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
+                  fill="none"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="performanceGauge + ', 100'"
+                />
+              </svg>
+              <span class="db-gauge__pct">{{ performanceGauge }}%</span>
+            </div>
+            <div>
+              <p class="db-gauge__name">Performance</p>
+              <p class="db-gauge__hint">Índice compuesto agenda / operación</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Acciones -->
+    <section class="db-quick" aria-label="Acciones rápidas">
+      <h3 class="db-section-title">
+        <span class="material-symbols-outlined">bolt</span>
+        Operaciones rápidas
+      </h3>
+      <div class="db-quick__grid">
+        <button type="button" class="db-quick-card" (click)="navigateTo('/vehicles/new')">
+          <div class="db-quick-card__icon">
+            <span class="material-symbols-outlined">add_circle</span>
+          </div>
+          <span class="db-quick-card__label">Nuevo Vehículo</span>
+        </button>
+        <button type="button" class="db-quick-card" (click)="navigateTo('/maintenance/new')">
+          <div class="db-quick-card__icon">
+            <span class="material-symbols-outlined">handyman</span>
+          </div>
+          <span class="db-quick-card__label">Mantenimiento</span>
+        </button>
+        <button type="button" class="db-quick-card" (click)="navigateTo('/register')">
+          <div class="db-quick-card__icon">
+            <span class="material-symbols-outlined">person_add_alt</span>
+          </div>
+          <span class="db-quick-card__label">Nuevo Cliente</span>
+        </button>
+        <button type="button" class="db-quick-card" (click)="exportReport()" [disabled]="vehicles.length === 0">
+          <div class="db-quick-card__icon">
+            <span class="material-symbols-outlined">analytics</span>
+          </div>
+          <span class="db-quick-card__label">Exportar Reporte</span>
+        </button>
       </div>
-    </div>
+    </section>
+
+    <!-- Flota -->
+    <section class="db-fleet" aria-label="Flota registrada">
+      <div class="db-fleet__head">
+        <h3 class="db-section-title db-section-title--nomargin">
+          <span class="material-symbols-outlined">list_alt</span>
+          Flota registrada
+        </h3>
+        <a routerLink="/vehicles" class="db-link">
+          Ver flota completa
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="db-table-wrap" *ngIf="vehicles.length > 0">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>Vehículo</th>
+              <th>Año</th>
+              <th>Placa</th>
+              <th>Kilometraje</th>
+              <th>Estado</th>
+              <th class="db-table__act">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of vehicles.slice(0, 8)">
+              <td>
+                <div class="db-cell-veh">
+                  <div class="db-cell-veh__thumb">
+                    <span class="material-symbols-outlined">directions_car</span>
+                  </div>
+                  <div>
+                    <p class="db-cell-veh__name">{{ v.brand }} {{ v.model }}</p>
+                    <p class="db-cell-veh__meta">
+                      {{ vehicleFuelLabel(v)
+                      }}<span *ngIf="vehicleTransmissionLabel(v)">
+                        • {{ vehicleTransmissionLabel(v) }}</span
+                      >
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td class="db-num">{{ v.year }}</td>
+              <td>
+                <span class="db-plate">{{ v.licensePlate || '—' }}</span>
+              </td>
+              <td class="db-num-strong">{{ mileageLabel(v.mileage) }}</td>
+              <td>
+                <span class="db-pill" [class.db-pill--off]="!v.isActive">
+                  <span class="db-status-dot" *ngIf="v.isActive"></span>
+                  {{ v.isActive ? 'Operativo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="db-table__act">
+                <button
+                  type="button"
+                  class="db-more"
+                  title="Ver detalle"
+                  (click)="navigateTo('/vehicles/' + v.id)"
+                >
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="db-empty-flot" *ngIf="vehicles.length === 0">
+        <span class="material-symbols-outlined">directions_car</span>
+        <p>No hay vehículos en esta cuenta.</p>
+        <button type="button" class="db-primary-btn" (click)="navigateTo('/vehicles/new')">
+          Registrar vehículo
+        </button>
+      </div>
+    </section>
   </div>
 
-  <!-- Quick Actions -->
-  <div class="section-header">
-    <h3>Acciones Rápidas</h3>
-  </div>
-  <div class="quick-actions">
-    <button class="action-card" (click)="navigateTo('/vehicles/new')">
-      <span class="material-icons-round">add_circle</span>
-      <span>Nuevo Vehículo</span>
-    </button>
-    <button class="action-card" (click)="navigateTo('/maintenance/new')">
-      <span class="material-icons-round">build_circle</span>
-      <span>Nuevo Mantenimiento</span>
-    </button>
-    <button class="action-card" (click)="navigateTo('/reminders/new')">
-      <span class="material-icons-round">notification_add</span>
-      <span>Nuevo Recordatorio</span>
-    </button>
-    <button class="action-card" (click)="navigateTo('/vehicles')">
-      <span class="material-icons-round">list_alt</span>
-      <span>Ver Vehículos</span>
-    </button>
-  </div>
-
-  <!-- Recent Vehicles -->
-  <div class="section-header">
-    <h3>Mis Vehículos</h3>
-    <a routerLink="/vehicles" class="see-all">Ver todos</a>
-  </div>
-
-  <div class="vehicles-list" *ngIf="!loading && vehicles.length > 0">
-    <div class="vehicle-mini-card" *ngFor="let v of vehicles.slice(0, 4)"
-         (click)="navigateTo('/vehicles/' + v.id)">
-      <div class="vehicle-mini-icon">
-        <span class="material-icons-round">directions_car</span>
-      </div>
-      <div class="vehicle-mini-info">
-        <h4>{{ v.brand }} {{ v.model }}</h4>
-        <p>{{ v.year }} · {{ v.licensePlate || 'Sin placa' }} · {{ v.mileage || 0 }} km</p>
-      </div>
-      <span class="vehicle-mini-status" [class.active]="v.isActive">
-        {{ v.isActive ? 'Activo' : 'Inactivo' }}
-      </span>
-    </div>
-  </div>
-
-  <div *ngIf="loading" class="loading-state">
-    <div class="spinner-lg"></div>
-  </div>
-
-  <div *ngIf="!loading && vehicles.length === 0" class="empty-state">
-    <span class="material-icons-round empty-icon">directions_car</span>
-    <h3>No tienes vehículos registrados</h3>
-    <p>Agrega tu primer vehículo para empezar</p>
-    <button class="btn-submit" (click)="navigateTo('/vehicles/new')">Agregar Vehículo</button>
+  <div class="db-loading" *ngIf="loading">
+    <div class="db-spinner"></div>
+    <span>Cargando panel…</span>
   </div>
 </div>

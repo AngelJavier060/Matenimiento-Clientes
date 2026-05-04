@@ -1,38 +1,115 @@
-<aside class="sidebar">
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed" [attr.aria-expanded]="!collapsed">
   <div class="sidebar-header">
-    <div class="logo">
-      <span class="material-icons-round logo-icon">directions_car</span>
-      <div class="logo-text">
-        <h1>Vehicle</h1>
-        <span>Maintenance</span>
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__mark">
+        <span class="material-symbols-outlined">precision_manufacturing</span>
+      </div>
+      <div class="sidebar-brand__text">
+        <h1 class="sidebar-brand__title">Vehicle</h1>
+        <p class="sidebar-brand__sub">Maintenance</p>
       </div>
     </div>
+    <button
+      type="button"
+      class="sidebar-pin"
+      (click)="sidebarState.toggle()"
+      [attr.aria-label]="collapsed ? 'Expandir menú' : 'Colapsar menú'"
+      [title]="collapsed ? 'Expandir menú' : 'Colapsar menú'"
+    >
+      <span class="material-symbols-outlined">{{ collapsed ? 'chevron_right' : 'chevron_left' }}</span>
+    </button>
   </div>
 
-  <nav class="sidebar-nav">
-    <p class="nav-label">Menú Principal</p>
-    <a *ngFor="let item of menuItems"
-       [routerLink]="item.path"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact: item.path === '/dashboard'}"
-       class="nav-item">
-      <span class="material-icons-round nav-icon">{{ item.icon }}</span>
+  <nav class="sidebar-nav" aria-label="Navegación principal">
+    <p class="nav-label">Menú principal</p>
+
+    <a
+      *ngFor="let item of navLinks"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: !!item.exact }"
+      class="nav-item"
+      [title]="collapsed ? item.label : ''"
+    >
+      <span class="material-symbols-outlined nav-icon">{{ item.icon }}</span>
       <span class="nav-text">{{ item.label }}</span>
+    </a>
+
+    <div class="nav-group">
+      <a
+        *ngIf="collapsed"
+        routerLink="/maintenance"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        class="nav-item"
+        [title]="maintenanceLabel"
+      >
+        <span class="material-symbols-outlined nav-icon">{{ maintenanceIcon }}</span>
+        <span class="nav-text">{{ maintenanceLabel }}</span>
+      </a>
+
+      <div *ngIf="!collapsed" class="nav-group__block">
+        <div class="nav-group__row">
+          <a
+            routerLink="/maintenance"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="maintenanceParentMatch"
+            class="nav-item nav-group__parent"
+            [title]="maintenanceLabel"
+          >
+            <span class="material-symbols-outlined nav-icon">{{ maintenanceIcon }}</span>
+            <span class="nav-text">{{ maintenanceLabel }}</span>
+          </a>
+          <button
+            type="button"
+            class="nav-group__toggle"
+            [attr.aria-expanded]="maintenanceOpen"
+            aria-controls="submenu-maintenance"
+            [attr.aria-label]="maintenanceOpen ? 'Contraer submenú Mantenimientos' : 'Expandir submenú Mantenimientos'"
+            (click)="toggleMaintenanceMenu()"
+          >
+            <span class="material-symbols-outlined">{{ maintenanceOpen ? 'expand_less' : 'expand_more' }}</span>
+          </button>
+        </div>
+
+        <ul id="submenu-maintenance" class="nav-submenu" [hidden]="!maintenanceOpen">
+          <li *ngFor="let sub of maintenanceChildren">
+            <a
+              [routerLink]="sub.path"
+              [queryParams]="sub.queryParams"
+              queryParamsHandling="merge"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="maintenanceSubMatch"
+              class="nav-submenu-link"
+              >{{ sub.label }}</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <a
+      [routerLink]="remindersLink.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: false }"
+      class="nav-item"
+      [title]="collapsed ? remindersLink.label : ''"
+    >
+      <span class="material-symbols-outlined nav-icon">{{ remindersLink.icon }}</span>
+      <span class="nav-text">{{ remindersLink.label }}</span>
     </a>
   </nav>
 
   <div class="sidebar-footer">
     <div class="user-info">
-      <div class="user-avatar">
-        {{ user?.fullName?.charAt(0) || 'U' }}
-      </div>
+      <div class="user-avatar">{{ user?.fullName?.charAt(0) || 'U' }}</div>
       <div class="user-details">
         <p class="user-name">{{ user?.fullName || 'Usuario' }}</p>
         <p class="user-role">Administrador</p>
       </div>
     </div>
-    <button class="logout-btn" (click)="logout()" title="Cerrar sesión">
-      <span class="material-icons-round">logout</span>
+    <button type="button" class="logout-btn" (click)="logout()" title="Cerrar sesión">
+      <span class="material-symbols-outlined">logout</span>
     </button>
   </div>
 </aside>

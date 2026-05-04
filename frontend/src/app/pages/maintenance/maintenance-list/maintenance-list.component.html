@@ -1,14 +1,21 @@
-<app-navbar title="Mantenimientos">
+<app-navbar [title]="pageTitle">
   <button class="btn-icon" (click)="selectedVehicleId && onVehicleChange(selectedVehicleId)" title="Actualizar">
     <span class="material-icons-round">refresh</span>
   </button>
 </app-navbar>
 
 <div class="page-content">
+  <!-- MÓDULO MP: se muestra cuando categoria=preventivo -->
+  <app-mp-plan *ngIf="filterCategoria === 'preventivo'"></app-mp-plan>
+
+  <!-- Vista normal (correctivo o general) -->
+  <ng-container *ngIf="filterCategoria !== 'preventivo'">
+
   <div class="filters-bar">
+    <span *ngIf="filterLabel" class="mcat-chip">{{ filterLabel }}</span>
     <div class="vehicle-select-wrapper">
       <span class="material-icons-round">directions_car</span>
-      <select [(ngModel)]="selectedVehicleId" (change)="onVehicleChange(selectedVehicleId!)">
+      <select [(ngModel)]="selectedVehicleId" (change)="onVehicleChange(selectedVehicleId)">
         <option [ngValue]="null">Seleccionar vehículo</option>
         <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }} - {{ v.licensePlate }}</option>
       </select>
@@ -29,8 +36,8 @@
     <div class="spinner-lg"></div>
   </div>
 
-  <div *ngIf="selectedVehicleId && !loading && maintenances.length > 0" class="maintenance-list">
-    <div class="maintenance-card" *ngFor="let m of maintenances">
+  <div *ngIf="selectedVehicleId && !loading && displayedMaintenances.length > 0" class="maintenance-list">
+    <div class="maintenance-card" *ngFor="let m of displayedMaintenances">
       <div class="maint-header">
         <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
         <span class="maint-date">{{ m.serviceDate || '-' }}</span>
@@ -54,13 +61,21 @@
     </div>
   </div>
 
+  <div *ngIf="selectedVehicleId && !loading && maintenances.length > 0 && displayedMaintenances.length === 0" class="empty-state">
+    <span class="material-icons-round empty-icon">filter_alt_off</span>
+    <h3>Sin registros para esta categoría</h3>
+    <p>Prueba otra vista o usa un tipo de servicio que incluya "{{ filterLabel | lowercase }}" al crear registros.</p>
+  </div>
+
   <div *ngIf="selectedVehicleId && !loading && maintenances.length === 0" class="empty-state">
     <span class="material-icons-round empty-icon">build</span>
     <h3>Sin mantenimientos</h3>
     <p>Este vehículo no tiene mantenimientos registrados</p>
     <button class="btn-primary" (click)="newMaintenance()">
-      <span class="material-icons-round">add</span>
-      Agregar Mantenimiento
+    <span class="material-icons-round">add</span>
+    Agregar Mantenimiento
     </button>
   </div>
+
+  </ng-container>
 </div>

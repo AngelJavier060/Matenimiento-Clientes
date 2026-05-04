@@ -45,5 +45,9 @@ public class VehicleRequest {
     @Size(max = 50, message = "El color no puede exceder 50 caracteres")
     private String color;
 
+    private String imageUrl;
+
+    private Long clientId;
+
     private String notes;
 }

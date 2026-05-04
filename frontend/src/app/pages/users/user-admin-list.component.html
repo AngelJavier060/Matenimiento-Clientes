@@ -1,0 +1,188 @@
+<div class="ua">
+  <div class="ua-bg" aria-hidden="true"></div>
+
+  <header class="ua-header">
+    <div>
+      <h1 class="ua-header__title">Gestión de Usuarios</h1>
+      <p class="ua-header__sub">Directorio central de credenciales</p>
+    </div>
+    <div class="ua-header__actions">
+      <div class="ua-search">
+        <span class="material-symbols-outlined ua-search__icon">search</span>
+        <input
+          type="search"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Buscar por nombre o ID..."
+          class="ua-search__input"
+        />
+      </div>
+      <button type="button" class="ua-btn-primary" (click)="goNew()">
+        <span class="material-symbols-outlined">person_add</span>
+        Nuevo Usuario
+      </button>
+    </div>
+  </header>
+
+  <div class="ua-body">
+    <div class="ua-toolbar">
+      <div class="ua-chips">
+        <button type="button" class="ua-chip" [class.ua-chip--on]="filter === 'ALL'" (click)="setFilter('ALL')">
+          Todos
+        </button>
+        <button
+          type="button"
+          class="ua-chip"
+          [class.ua-chip--on]="filter === 'SUPER'"
+          (click)="setFilter('SUPER')"
+        >
+          Super Usuarios
+        </button>
+        <button
+          type="button"
+          class="ua-chip"
+          [class.ua-chip--on]="filter === 'ADMIN'"
+          (click)="setFilter('ADMIN')"
+        >
+          Administradores
+        </button>
+        <button
+          type="button"
+          class="ua-chip"
+          [class.ua-chip--on]="filter === 'STANDARD'"
+          (click)="setFilter('STANDARD')"
+        >
+          Estándar
+        </button>
+      </div>
+      <div class="ua-toolbar__right">
+        <div class="ua-stat">
+          <span class="ua-stat__label">Activos ahora</span>
+          <span class="ua-stat__value">{{ activeNowLabel }}</span>
+        </div>
+        <span class="ua-divider"></span>
+        <button type="button" class="ua-icon-sq" title="Filtros">
+          <span class="material-symbols-outlined">filter_list</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ua-table-card glass-panel">
+      <div class="ua-table-scroll">
+        <table class="ua-table">
+          <thead>
+            <tr>
+              <th>Identidad del Usuario</th>
+              <th>Nivel de Acceso</th>
+              <th>Último Acceso</th>
+              <th>Estado de Red</th>
+              <th class="ua-table__actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of paged" class="ua-row">
+              <td>
+                <div class="ua-user">
+                  <div class="ua-avatar" *ngIf="!u.avatarUrl">{{ initials(u) }}</div>
+                  <div class="ua-avatar ua-avatar--img" *ngIf="u.avatarUrl">
+                    <img [src]="u.avatarUrl" [alt]="u.fullName" />
+                  </div>
+                  <div>
+                    <p class="ua-user__name">{{ u.fullName }}</p>
+                    <p class="ua-user__email">{{ u.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="ua-badge" [ngClass]="'ua-badge--' + u.role.toLowerCase()">
+                  <span class="ua-badge__dot"></span>
+                  {{ roleLabel(u.role) }}
+                </span>
+              </td>
+              <td>
+                <p class="ua-mono">{{ u.lastAccessLabel }}</p>
+                <p class="ua-detail">{{ u.lastAccessDetail }}</p>
+              </td>
+              <td>
+                <span class="ua-net" [ngClass]="'ua-net--' + u.networkStatus.toLowerCase()">
+                  <span class="material-symbols-outlined" *ngIf="u.networkStatus === 'SYNCED'">check_circle</span>
+                  <span class="material-symbols-outlined" *ngIf="u.networkStatus === 'INACTIVE'">schedule</span>
+                  <span class="material-symbols-outlined" *ngIf="u.networkStatus === 'BLOCKED'">warning</span>
+                  {{
+                    u.networkStatus === 'SYNCED'
+                      ? 'Sincronizado'
+                      : u.networkStatus === 'INACTIVE'
+                        ? 'Inactivo'
+                        : 'Bloqueado'
+                  }}
+                </span>
+              </td>
+                            <td class="ua-table__actions">
+                              <div class="ua-row-actions">
+                                <button type="button" class="ua-icon-act" title="Editar" (click)="goEdit(u)">
+                                  <span class="material-symbols-outlined">edit</span>
+                                </button>
+                                <button type="button" class="ua-icon-act" title="Activar/Desactivar" (click)="toggleStatus(u)">
+                                  <span class="material-symbols-outlined">{{ u.networkStatus === 'INACTIVE' ? 'check_circle' : 'block' }}</span>
+                                </button>
+                                <button type="button" class="ua-icon-act ua-icon-act--danger" title="Eliminar" (click)="deleteUser(u)">
+                                  <span class="material-symbols-outlined">delete</span>
+                                </button>
+                              </div>
+                            </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ua-table-foot">
+        <p>
+          Mostrando {{ paged.length ? (page - 1) * pageSize + 1 : 0 }}-{{
+            (page - 1) * pageSize + paged.length
+          }}
+          de {{ filtered.length }} usuarios
+        </p>
+        <div class="ua-pager">
+          <button type="button" class="ua-page-btn" (click)="setPage(page - 1)" [disabled]="page <= 1">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <button
+            *ngFor="let n of pageNumbers()"
+            type="button"
+            class="ua-page-btn"
+            [class.ua-page-btn--cur]="n === page"
+            (click)="setPage(n)"
+          >
+            {{ n }}
+          </button>
+          <button type="button" class="ua-page-btn" (click)="setPage(page + 1)" [disabled]="page >= totalPages">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ua-bento">
+      <div class="ua-bento__main glass-panel">
+        <div class="ua-bento__copy">
+          <h3>Auditoría de Seguridad</h3>
+          <p>
+            Revise accesos y altas de usuario. Las cuentas creadas desde este panel quedan registradas en el
+            directorio local y en el backend (API de registro).
+          </p>
+          <button type="button" class="ua-link-btn">
+            Ver reporte completo
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+        <span class="material-symbols-outlined ua-bento__icon">verified_user</span>
+      </div>
+      <div class="ua-bento__side glass-panel ua-bento__side--primary">
+        <span class="material-symbols-outlined">analytics</span>
+        <h4>Crecimiento de red</h4>
+        <p class="ua-bento__metric">+12.4% <span>mensual</span></p>
+        <div class="ua-progress"><span style="width: 72%"></span></div>
+        <p class="ua-bento__hint">Objetivo: 200 usuarios concurrentes</p>
+      </div>
+    </div>
+  </div>
+</div>

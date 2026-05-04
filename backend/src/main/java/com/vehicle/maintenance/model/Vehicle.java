@@ -28,6 +28,10 @@ public class Vehicle {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
+    private Client client;
+
     @Column(nullable = false, length = 100)
     private String brand;
 
@@ -56,6 +60,9 @@ public class Vehicle {
 
     @Column(length = 50)
     private String color;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

@@ -36,6 +36,11 @@ export class AuthService {
       );
   }
 
+  /** Alta de usuario sin reemplazar la sesión actual (panel de administración). */
+  registerSystemUser(data: RegisterRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, data);
+  }
+
   logout(): void {
     this.tokenService.removeToken();
   }

@@ -9,6 +9,9 @@ export interface VehicleResponse {
   fuelType?: string;
   transmission?: string;
   color?: string;
+  imageUrl?: string;
+  clientId?: number;
+  clientName?: string;
   notes?: string;
   isActive: boolean;
   createdAt?: string;
