@@ -35,8 +35,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: admin123
       JWT_SECRET: "dGhpcyBpcyBhIHZlcnkgc2VjdXJlIGp3dCBzZWNyZXQga2V5IGZvciB2ZWhpY2xlIG1haW50ZW5hbmNlIGFwcA=="
       JWT_EXPIRATION: 86400000
-    ports:
-      - "8080:8080"
+    # Sin publicar puertos en el host por defecto (evita choque con NPM u otros).
+    # En tu PC: también docker-compose.publish-ports.yml
+    # En el servidor: docker-compose.override.yml (ej. 9088/9089)
     volumes:
       - vehicle-uploads:/app/uploads
     networks:
@@ -50,8 +51,7 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "80:80"
+    # Ver comentario del servicio backend (ports vía override o publish-ports.yml)
     networks:
       - vehicle-network
 

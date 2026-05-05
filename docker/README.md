@@ -18,8 +18,8 @@ docker-compose.yml        # Orquestación de servicios
 | Servicio   | Puerto | Descripción                          |
 |------------|--------|--------------------------------------|
 | postgres   | (interno `5432`) | PostgreSQL 16; sin mapear al host por defecto (evita choque con otros Postgres del servidor). |
-| backend    | 8080   | API REST Spring Boot                 |
-| frontend   | 80     | Frontend Angular (nginx)             |
+| backend    | interno `8080` | Spring Boot; público al host solo con `publish-ports.yml` u override (servidor). |
+| frontend   | interno `80`   | Nginx Angular; igual que arriba. |
 
 Puerto Postgres en tu máquina (opcional):
 
@@ -32,22 +32,28 @@ docker compose -f docker-compose.yml -f docker-compose.expose-postgres.yml up -d
 ## Comandos
 
 ```bash
-# Construir y arrancar todos los servicios
+# Construir y arrancar (sin mapear puertos al host — ideal para servidor detrás de NPM)
 docker compose up -d --build
 
-# Ver logs
-docker compose logs -f
-
-# Detener servicios
-docker compose down
-
-# Detener y eliminar volúmenes (borra datos)
-docker compose down -v
-
-# Acceder a la app
-# http://localhost (frontend)
-# http://localhost:8080/api (backend)
+# En tu máquina local, si necesitás http://localhost y http://localhost:8080/api
+docker compose -f docker-compose.yml -f docker-compose.publish-ports.yml up -d --build
 ```
+
+Puerto opcional de Postgres al host (DBeaver):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.expose-postgres.yml up -d postgres
+```
+
+Más comandos útiles:
+
+```bash
+docker compose logs -f
+docker compose down
+docker compose down -v  # borra volúmenes (datos BD)
+```
+
+Con `docker-compose.publish-ports.yml`: acceso habitual `http://localhost` (frontend) y `http://localhost:8080/api` (API directa).
 
 ## Notas
 

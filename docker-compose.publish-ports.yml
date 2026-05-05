@@ -1,0 +1,13 @@
+# Opcional: exponer API y web al host para probar en localhost (puertos 8080 y 80).
+# Compose concatena listas de `ports`; este archivo evita publicar 80/8080 en la base
+# y chocar con Nginx Proxy Manager u otros servicios en el servidor.
+#
+# Ejemplo:
+#   docker compose -f docker-compose.yml -f docker-compose.publish-ports.yml up -d --build
+services:
+  backend:
+    ports:
+      - "8080:8080"
+  frontend:
+    ports:
+      - "80:80"
