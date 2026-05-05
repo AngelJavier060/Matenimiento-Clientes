@@ -21,8 +21,8 @@ FROM nginx:1.25-alpine AS runtime
 # Copiar configuración personalizada de nginx
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos compilados
-COPY --from=build /app/dist/ /usr/share/nginx/html
+# Angular application builder escribe en dist/browser/ (no en la raíz de dist)
+COPY --from=build /app/dist/browser/ /usr/share/nginx/html/
 
 EXPOSE 80
 
