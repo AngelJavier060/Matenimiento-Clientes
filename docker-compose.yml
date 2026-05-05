@@ -7,8 +7,9 @@ services:
       POSTGRES_DB: vehicle_maintenance
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
-    ports:
-      - "5432:5432"
+    # Solo red interna de Compose (vehicle_api usa hostname "postgres").
+    # Si necesitás acceso desde el host, usá también:
+    #   docker-compose.expose-postgres.yml (ej. localhost:5433)
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

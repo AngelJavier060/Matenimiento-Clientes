@@ -15,11 +15,19 @@ docker-compose.yml        # Orquestación de servicios
 
 ## Servicios
 
-| Servicio   | Puerto | Descripción                     |
-|------------|--------|---------------------------------|
-| postgres   | 5432   | Base de datos PostgreSQL 16     |
-| backend    | 8080   | API REST Spring Boot            |
-| frontend   | 80     | Frontend Angular (nginx)        |
+| Servicio   | Puerto | Descripción                          |
+|------------|--------|--------------------------------------|
+| postgres   | (interno `5432`) | PostgreSQL 16; sin mapear al host por defecto (evita choque con otros Postgres del servidor). |
+| backend    | 8080   | API REST Spring Boot                 |
+| frontend   | 80     | Frontend Angular (nginx)             |
+
+Puerto Postgres en tu máquina (opcional):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.expose-postgres.yml up -d postgres
+```
+
+(Host `localhost:5433` → contenedor `5432`. Ajustá usuario/clave como en `docker-compose.yml`.)
 
 ## Comandos
 

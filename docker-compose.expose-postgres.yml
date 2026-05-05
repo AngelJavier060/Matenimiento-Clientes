@@ -1,0 +1,9 @@
+# Opcional: exponer Postgres al host para DBeaver / backend con Maven en fuera de Docker.
+# Evita choke en servidores donde el puerto 5432 del host ya está ocupado usando 5433.
+#
+# Ejemplo:
+#   docker compose -f docker-compose.yml -f docker-compose.expose-postgres.yml up -d postgres
+services:
+  postgres:
+    ports:
+      - "5433:5432"

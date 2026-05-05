@@ -23,6 +23,7 @@ vehicle-maintenance/
 ```bash
 docker compose up -d postgres
 ```
+(Postgres solo en la red de Docker por defecto. Para abrir desde tu PC herramientas en `localhost`, usá también `docker-compose.expose-postgres.yml` — ver `docker/README.md`.)
 
 ### 2. Ejecutar Backend
 ```bash
