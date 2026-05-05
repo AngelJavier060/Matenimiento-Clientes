@@ -1,0 +1,2 @@
+# Scripts usados en imágenes Linux (CRLF rompe el shebang en Alpine).
+docker/**/*.sh text eol=lf

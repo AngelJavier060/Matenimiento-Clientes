@@ -3,6 +3,7 @@ package com.vehicle.maintenance.controller;
 import com.vehicle.maintenance.service.UserService;
 import com.vehicle.maintenance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/upload")
 @RequiredArgsConstructor
@@ -125,7 +127,11 @@ public class UploadController {
             return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
 
         } catch (IOException e) {
+            log.warn("Fallo guardando foto de vehículo (filesystem): {}", e.toString());
             return ResponseEntity.internalServerError().body(Map.of("error", "Error al guardar la imagen"));
+        } catch (Exception e) {
+            log.warn("Fallo foto vehículo: {}", e.toString());
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 }

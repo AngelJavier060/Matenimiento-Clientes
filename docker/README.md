@@ -55,6 +55,16 @@ docker compose down -v  # borra volúmenes (datos BD)
 
 Con `docker-compose.publish-ports.yml`: acceso habitual `http://localhost` (frontend) y `http://localhost:8080/api` (API directa).
 
+## Subida de fotos en producción (Nginx Proxy Manager)
+
+Si `/api/upload/vehicle-photo` devuelve **500** o **413**, en el **Proxy Host** de tu dominio abrí **Advanced** y añadí:
+
+```nginx
+client_max_body_size 15m;
+```
+
+(El contenedor `vehicle_frontend` ya lleva el mismo límite hacia el backend.)
+
 ## Notas
 
 - `app_mantenimiento/` (Flutter) NO se incluye en Docker
