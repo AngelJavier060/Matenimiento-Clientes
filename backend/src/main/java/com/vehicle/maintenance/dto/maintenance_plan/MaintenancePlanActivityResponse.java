@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 public class MaintenancePlanActivityResponse {
 
     private Long id;
+
+    /** Si la línea proviene de copiar la plantilla: id de {@code maintenance_plan_activities}. */
+    private Long clonedFromPlanActivityId;
+
     private String nombre;
     private String tipo;
     private Integer intervaloKm;

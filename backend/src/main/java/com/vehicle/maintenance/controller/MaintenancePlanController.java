@@ -32,6 +32,13 @@ public class MaintenancePlanController {
         return ResponseEntity.ok(planService.getAllPlans(SecurityUtils.getCurrentUserId()));
     }
 
+    @GetMapping("/for-vehicle/{vehicleId}")
+    @Operation(summary = "Resolver plan MP del vehículo (MMY o plan fijo en unidad)")
+    public ResponseEntity<VehicleMaintenancePlanMatchResponse> resolvePlanForVehicle(
+            @PathVariable Long vehicleId) {
+        return ResponseEntity.ok(planService.resolvePlanForVehicle(vehicleId, SecurityUtils.getCurrentUserId()));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener plan por ID con sus actividades")
     public ResponseEntity<MaintenancePlanResponse> getPlanById(@PathVariable Long id) {

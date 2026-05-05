@@ -17,4 +17,8 @@ export interface VehicleResponse {
   createdAt?: string;
   updatedAt?: string;
   maintenanceCount: number;
+  maintenancePlanId?: number | null;
+  /** Próximo servicio pactado por unidad (opcional km y/o fecha). */
+  nextCommittedServiceMileage?: number | null;
+  nextCommittedServiceDate?: string | null;
 }

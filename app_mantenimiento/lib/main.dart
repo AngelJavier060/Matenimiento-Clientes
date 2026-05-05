@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
@@ -7,15 +8,16 @@ import 'providers/reminder_provider.dart';
 import 'providers/vehicle_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/historic/historic_pdf_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/maintenance/maintenance_form_screen.dart';
-import 'screens/reminders/reminder_form_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/vehicles/vehicle_detail_screen.dart';
 import 'screens/vehicles/vehicle_form_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_ES');
   runApp(const MyApp());
 }
 
@@ -44,7 +46,7 @@ class MyApp extends StatelessWidget {
           '/vehicles/detail': (context) => const VehicleDetailScreen(),
           '/vehicles/form': (context) => const VehicleFormScreen(),
           '/maintenance/form': (context) => const MaintenanceFormScreen(),
-          '/reminders/form': (context) => const ReminderFormScreen(),
+          '/historic/pdf': (context) => const HistoricPdfScreen(),
         },
       ),
     );

@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,11 @@ public class Vehicle {
     @JoinColumn(name = "client_id")
     private Client client;
 
+    /** Override opcional del plan MP (preventivo manual); si null se resuelve por marca/modelo/año. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maintenance_plan_id")
+    private MaintenancePlan maintenancePlan;
+
     @Column(nullable = false, length = 100)
     private String brand;
 
@@ -49,6 +55,13 @@ public class Vehicle {
 
     @Builder.Default
     private Integer mileage = 0;
+
+    /** Próximo servicio acordado para la unidad (opcional): umbral único complementario al plan por líneas. */
+    @Column(name = "next_committed_service_mileage")
+    private Integer nextCommittedServiceMileage;
+
+    @Column(name = "next_committed_service_date")
+    private LocalDate nextCommittedServiceDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "fuel_type", length = 20)

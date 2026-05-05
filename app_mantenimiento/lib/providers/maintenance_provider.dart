@@ -9,25 +9,36 @@ class MaintenanceProvider extends ChangeNotifier {
   List<MaintenanceResponse> _maintenances = [];
   bool _isLoading = false;
   String? _error;
+  /// Evita aplicar respuestas viejas si el usuario cambia de vehículo muy rápido.
+  int _loadGeneration = 0;
 
   List<MaintenanceResponse> get maintenances => _maintenances;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   Future<void> loadMaintenances(int vehicleId) async {
+    final gen = ++_loadGeneration;
     _isLoading = true;
     _error = null;
+    _maintenances = [];
     notifyListeners();
 
     try {
-      _maintenances =
+      final list =
           await _maintenanceService.getMaintenancesByVehicle(vehicleId);
+      if (gen != _loadGeneration) return;
+      _maintenances = list;
+      _error = null;
     } catch (e) {
+      if (gen != _loadGeneration) return;
+      _maintenances = [];
       _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (gen == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createMaintenance(MaintenanceRequest request) async {

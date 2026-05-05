@@ -10,8 +10,9 @@ import { VehicleDetailComponent } from './pages/vehicles/vehicle-detail/vehicle-
 import { VehicleFormComponent } from './pages/vehicles/vehicle-form/vehicle-form.component';
 import { MaintenanceListComponent } from './pages/maintenance/maintenance-list/maintenance-list.component';
 import { MaintenanceFormComponent } from './pages/maintenance/maintenance-form/maintenance-form.component';
+import { HistoricPageComponent } from './pages/historic/historic-page.component';
 import { ReminderListComponent } from './pages/reminders/reminder-list/reminder-list.component';
-import { ReminderFormComponent } from './pages/reminders/reminder-form/reminder-form.component';
+import { ReminderNewRedirectComponent } from './pages/reminders/reminder-new-redirect.component';
 import { UserAdminListComponent } from './pages/users/user-admin-list.component';
 import { UserAdminFormComponent } from './pages/users/user-admin-form.component';
 
@@ -35,10 +36,12 @@ const routes: Routes = [
       { path: 'vehicles/new', redirectTo: '/register', pathMatch: 'full' },
       { path: 'vehicles/edit/:id', component: VehicleFormComponent },
       { path: 'vehicles/:id', component: VehicleDetailComponent },
+      { path: 'historico', component: HistoricPageComponent },
       { path: 'maintenance', component: MaintenanceListComponent },
       { path: 'maintenance/new', component: MaintenanceFormComponent },
+      { path: 'maintenance/edit/:id', component: MaintenanceFormComponent },
       { path: 'reminders', component: ReminderListComponent },
-      { path: 'reminders/new', component: ReminderFormComponent },
+      { path: 'reminders/new', component: ReminderNewRedirectComponent },
     ]
   },
   { path: '**', redirectTo: '/dashboard' }

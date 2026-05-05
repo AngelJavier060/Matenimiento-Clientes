@@ -106,6 +106,26 @@
     cursor: pointer;
     appearance: auto;
   }
+
+  &.form-group--full {
+    margin-top: 4px;
+
+    &:not(:last-child) {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.form-hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px;
+}
+
+.form-hint--inline {
+  margin: 0 0 6px;
+  font-size: 11px;
 }
 
 .form-error {

@@ -6,6 +6,8 @@ export interface Actividad {
   tipo: TipoOperacion;
   intervaloKm: number;
   intervaloMeses: number;
+  /** Id de línea MMY cuando la fila del libro viene de esa plantilla (`for-vehicle`). */
+  clonedFromPlanActivityId?: number | null;
 }
 
 export interface PlanMantenimiento {

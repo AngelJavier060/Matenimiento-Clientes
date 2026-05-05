@@ -6,12 +6,15 @@ class ReminderCard extends StatelessWidget {
   final ReminderResponse reminder;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  /// Alterna estado activo vía PATCH en backend.
+  final Future<void> Function()? onToggleActive;
 
   const ReminderCard({
     super.key,
     required this.reminder,
     required this.onTap,
     this.onDelete,
+    this.onToggleActive,
   });
 
   @override
@@ -23,102 +26,160 @@ class ReminderCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: reminder.isActive
-                      ? AppColors.warning.withOpacity(0.15)
-                      : AppColors.textSecondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  reminder.isActive
-                      ? Icons.notifications_active_rounded
-                      : Icons.notifications_off_rounded,
-                  color: reminder.isActive
-                      ? AppColors.warning
-                      : AppColors.textSecondary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      reminder.title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: reminder.isActive
+                          ? AppColors.warning.withOpacity(0.15)
+                          : AppColors.textSecondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    if (reminder.description != null &&
-                        reminder.description!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        reminder.description!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Row(
+                    child: Icon(
+                      reminder.isActive
+                          ? Icons.notifications_active_rounded
+                          : Icons.notifications_off_rounded,
+                      color: reminder.isActive
+                          ? AppColors.warning
+                          : AppColors.textSecondary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (reminder.thresholdMileage != null) ...[
-                          const Icon(Icons.speed,
-                              size: 12, color: AppColors.textSecondary),
-                          const SizedBox(width: 2),
+                        Text(
+                          reminder.title,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if ((reminder.vehicleInfo ?? '')
+                            .trim()
+                            .isNotEmpty)
                           Text(
-                            '${reminder.thresholdMileage} km',
+                            reminder.vehicleInfo!,
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
                           ),
-                        ],
-                        if (reminder.thresholdDate != null) ...[
-                          if (reminder.thresholdMileage != null)
-                            const SizedBox(width: 8),
-                          const Icon(Icons.calendar_today,
-                              size: 12, color: AppColors.textSecondary),
-                          const SizedBox(width: 2),
-                          Text(
-                            reminder.thresholdDate!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
+                  ),
+                  if (onToggleActive != null)
+                    IconButton(
+                      icon: reminder.isActive
+                          ? const Icon(Icons.pause_circle_outline,
+                              color: AppColors.textSecondary)
+                          : const Icon(Icons.play_circle_outline,
+                              color: AppColors.accent),
+                      tooltip:
+                          reminder.isActive ? 'Desactivar aviso' : 'Activar',
+                      onPressed: () => onToggleActive!(),
+                    ),
+                  if (onDelete != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: AppColors.error, size: 18),
+                      onPressed: onDelete,
+                    ),
+                ],
+              ),
+              if (reminder.description != null &&
+                  reminder.description!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  reminder.description!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (reminder.autoGenerated)
+                    _chip(Icons.auto_awesome, 'Automático', AppColors.info),
+                  if (reminder.reminderType != null)
+                    Chip(
+                      label: Text(reminder.reminderType!),
+                      visualDensity: VisualDensity.compact,
+                      labelStyle:
+                          const TextStyle(fontSize: 11),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  if (reminder.thresholdMileage != null) ...[
+                    const Icon(Icons.speed,
+                        size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${reminder.thresholdMileage} km',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ],
-                ),
+                  if (reminder.thresholdDate != null) ...[
+                    if (reminder.thresholdMileage != null)
+                      const SizedBox(width: 8),
+                    const Icon(Icons.calendar_today,
+                        size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 2),
+                    Text(
+                      reminder.thresholdDate!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (onDelete != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 18),
-                  onPressed: onDelete,
+              if (reminder.lastNotified != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Último aviso: ${reminder.lastNotified}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary.withOpacity(0.95),
+                  ),
                 ),
-              Switch(
-                value: reminder.isActive,
-                onChanged: (_) {},
-                activeColor: AppColors.accent,
-              ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _chip(IconData i, String t, Color c) {
+    return Chip(
+      avatar: Icon(i, size: 14, color: c),
+      label: Text(t),
+      visualDensity: VisualDensity.compact,
+      labelStyle: TextStyle(fontSize: 11, color: c),
+      backgroundColor: c.withOpacity(0.09),
+      side: BorderSide.none,
     );
   }
 }

@@ -6,6 +6,17 @@ import '../../providers/maintenance_provider.dart';
 import '../../providers/vehicle_provider.dart';
 import '../../widgets/custom_text_field.dart';
 
+class MaintenanceFormArgs {
+  final int? initialVehicleId;
+  /// Coincide con el filtro del listado Angular (`categoria=correctivo|preventivo`).
+  final String? defaultServiceCategory;
+
+  const MaintenanceFormArgs({
+    this.initialVehicleId,
+    this.defaultServiceCategory,
+  });
+}
+
 class MaintenanceFormScreen extends StatefulWidget {
   const MaintenanceFormScreen({super.key});
 
@@ -26,16 +37,37 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
 
   int? _vehicleId;
   String? _status;
+  String _serviceCategory = 'MIXED';
   DateTime? _serviceDate;
   DateTime? _nextServiceDate;
 
   final _statuses = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+  final _categories = ['MIXED', 'PREVENTIVE', 'CORRECTIVE'];
+
+  void _consumeRouteArgs(BuildContext ctx) {
+    final r = ModalRoute.of(ctx)?.settings.arguments;
+    if (r is! MaintenanceFormArgs) return;
+
+    final args = r;
+    if (args.initialVehicleId != null) {
+      _vehicleId ??= args.initialVehicleId;
+    }
+    final dsc = args.defaultServiceCategory?.toUpperCase();
+    if (dsc != null && _categories.contains(dsc)) {
+      _serviceCategory = dsc;
+    }
+  }
+
+  String _isoDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _consumeRouteArgs(context);
       context.read<VehicleProvider>().loadVehicles();
+      setState(() {});
     });
   }
 
@@ -72,25 +104,40 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_serviceDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text('La fecha del servicio es obligatoria'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     final provider = context.read<MaintenanceProvider>();
+    final mileageText = _mileageController.text.trim();
+    final int? mileageParsed =
+        mileageText.isEmpty ? null : int.tryParse(mileageText);
+
     final request = MaintenanceRequest(
       vehicleId: _vehicleId!,
       serviceType: _serviceTypeController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
-      mileageAtService: _mileageController.text.trim().isEmpty
-          ? null
-          : int.parse(_mileageController.text.trim()),
+      mileageAtService: mileageParsed,
+      odometerStatus: mileageParsed != null ? 'KNOWN' : null,
+      serviceCategory: _serviceCategory,
       cost: _costController.text.trim().isEmpty
           ? null
-          : double.parse(_costController.text.trim()),
-      serviceDate: _serviceDate?.toIso8601String().split('T')[0],
+          : double.tryParse(_costController.text.trim()),
+      serviceDate: _isoDate(_serviceDate!),
       nextServiceMileage: _nextMileageController.text.trim().isEmpty
           ? null
-          : int.parse(_nextMileageController.text.trim()),
-      nextServiceDate: _nextServiceDate?.toIso8601String().split('T')[0],
+          : int.tryParse(_nextMileageController.text.trim()),
+      nextServiceDate:
+          _nextServiceDate != null ? _isoDate(_nextServiceDate!) : null,
       workshopName: _workshopController.text.trim().isEmpty
           ? null
           : _workshopController.text.trim(),
@@ -136,27 +183,47 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Datos del Servicio',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
+                      const Text(
+                        'Datos del Servicio',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
+                        isExpanded: true,
                         value: _vehicleId,
                         decoration: const InputDecoration(
                           labelText: 'Vehículo *',
                           prefixIcon: Icon(Icons.directions_car_rounded,
                               color: AppColors.accent),
                         ),
+                        selectedItemBuilder: (ctx) =>
+                            vehicles.map((v) {
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  v.marcaPlacaLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
                         items: vehicles.map((v) {
                           return DropdownMenuItem(
                             value: v.id,
-                            child: Text(v.fullName),
+                            child: Text(
+                              v.marcaPlacaLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (v) => setState(() => _vehicleId = v),
-                        validator: (v) => v == null ? 'Seleccione un vehículo' : null,
+                        validator: (v) =>
+                            v == null ? 'Seleccione un vehículo' : null,
                       ),
                       const SizedBox(height: 14),
                       CustomTextField(
@@ -173,6 +240,31 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                         prefixIcon: Icons.description,
                         maxLines: 3,
                       ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<String>(
+                        value: _serviceCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Categoría del servicio',
+                          prefixIcon:
+                              Icon(Icons.category, color: AppColors.accent),
+                        ),
+                        items: _categories.map((c) {
+                          final labels = {
+                            'MIXED': 'Mixto',
+                            'PREVENTIVE': 'Preventivo',
+                            'CORRECTIVE': 'Correctivo',
+                          };
+                          return DropdownMenuItem(
+                            value: c,
+                            child: Text(labels[c] ?? c),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => _serviceCategory = v);
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -184,11 +276,14 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Detalles',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
+                      const Text(
+                        'Detalles',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -216,7 +311,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                         onTap: () => _selectDate(true),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            labelText: 'Fecha del servicio',
+                            labelText: 'Fecha del servicio *',
                             prefixIcon: Icon(Icons.calendar_today,
                                 color: AppColors.accent),
                           ),
@@ -259,11 +354,14 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Próximo Servicio & Taller',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
+                      const Text(
+                        'Próximo Servicio & Taller',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       CustomTextField(
                         controller: _nextMileageController,

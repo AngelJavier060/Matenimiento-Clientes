@@ -2,11 +2,14 @@ package com.vehicle.maintenance.service;
 
 import com.vehicle.maintenance.dto.vehicle.VehicleRequest;
 import com.vehicle.maintenance.dto.vehicle.VehicleResponse;
+import com.vehicle.maintenance.exception.BadRequestException;
 import com.vehicle.maintenance.exception.ResourceNotFoundException;
 import com.vehicle.maintenance.model.Client;
+import com.vehicle.maintenance.model.MaintenancePlan;
 import com.vehicle.maintenance.model.User;
 import com.vehicle.maintenance.model.Vehicle;
 import com.vehicle.maintenance.repository.ClientRepository;
+import com.vehicle.maintenance.repository.MaintenancePlanRepository;
 import com.vehicle.maintenance.repository.UserRepository;
 import com.vehicle.maintenance.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
+    private final MaintenancePlanRepository maintenancePlanRepository;
 
     public List<VehicleResponse> getAllVehicles() {
         return vehicleRepository.findByIsActiveTrueOrderByCreatedAtDesc()
@@ -80,6 +84,16 @@ public class VehicleService {
                 .isActive(true)
                 .build();
 
+        if (request.isMaintenancePlanIdProvided()) {
+            applyMaintenancePlanLink(vehicle, request.getMaintenancePlanId(), userId);
+        }
+        if (request.isNextCommittedServiceMileageProvided()) {
+            vehicle.setNextCommittedServiceMileage(request.getNextCommittedServiceMileage());
+        }
+        if (request.isNextCommittedServiceDateProvided()) {
+            vehicle.setNextCommittedServiceDate(request.getNextCommittedServiceDate());
+        }
+
         vehicle = vehicleRepository.save(vehicle);
         return toResponse(vehicle);
     }
@@ -106,6 +120,16 @@ public class VehicleService {
             var client = clientRepository.findById(request.getClientId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente", request.getClientId()));
             vehicle.setClient(client);
+        }
+
+        if (request.isMaintenancePlanIdProvided()) {
+            applyMaintenancePlanLink(vehicle, request.getMaintenancePlanId(), vehicle.getUser().getId());
+        }
+        if (request.isNextCommittedServiceMileageProvided()) {
+            vehicle.setNextCommittedServiceMileage(request.getNextCommittedServiceMileage());
+        }
+        if (request.isNextCommittedServiceDateProvided()) {
+            vehicle.setNextCommittedServiceDate(request.getNextCommittedServiceDate());
         }
 
         vehicle = vehicleRepository.save(vehicle);
@@ -141,6 +165,21 @@ public class VehicleService {
                 .createdAt(vehicle.getCreatedAt())
                 .updatedAt(vehicle.getUpdatedAt())
                 .maintenanceCount(vehicle.getMaintenances() != null ? vehicle.getMaintenances().size() : 0)
+                .maintenancePlanId(vehicle.getMaintenancePlan() != null ? vehicle.getMaintenancePlan().getId() : null)
+                .nextCommittedServiceMileage(vehicle.getNextCommittedServiceMileage())
+                .nextCommittedServiceDate(vehicle.getNextCommittedServiceDate())
                 .build();
+    }
+
+    private void applyMaintenancePlanLink(Vehicle vehicle, Long maintenancePlanId, Long userId) {
+        if (maintenancePlanId == null) {
+            vehicle.setMaintenancePlan(null);
+            return;
+        }
+        MaintenancePlan plan = maintenancePlanRepository.findByIdAndUserId(maintenancePlanId, userId)
+                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
+                .orElseThrow(() -> new BadRequestException(
+                        "Plan de mantenimiento inválido, inactivo o no pertenece a su usuario."));
+        vehicle.setMaintenancePlan(plan);
     }
 }

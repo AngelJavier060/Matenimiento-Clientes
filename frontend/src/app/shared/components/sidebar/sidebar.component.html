@@ -89,6 +89,17 @@
     </div>
 
     <a
+      [routerLink]="historicLink.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="nav-item"
+      [title]="collapsed ? historicLink.label : ''"
+    >
+      <span class="material-symbols-outlined nav-icon">{{ historicLink.icon }}</span>
+      <span class="nav-text">{{ historicLink.label }}</span>
+    </a>
+
+    <a
       [routerLink]="remindersLink.path"
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: false }"

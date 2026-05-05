@@ -1,3 +1,5 @@
+import 'maintenance_line_item.dart';
+
 class MaintenanceResponse {
   final int id;
   final int vehicleId;
@@ -5,6 +7,8 @@ class MaintenanceResponse {
   final String serviceType;
   final String? description;
   final int? mileageAtService;
+  final String? odometerStatus;
+  final String? serviceCategory;
   final double? cost;
   final String? serviceDate;
   final int? nextServiceMileage;
@@ -14,6 +18,7 @@ class MaintenanceResponse {
   final String? status;
   final String? notes;
   final String? createdAt;
+  final List<MaintenanceLineItem>? lineItems;
 
   MaintenanceResponse({
     required this.id,
@@ -22,6 +27,8 @@ class MaintenanceResponse {
     required this.serviceType,
     this.description,
     this.mileageAtService,
+    this.odometerStatus,
+    this.serviceCategory,
     this.cost,
     this.serviceDate,
     this.nextServiceMileage,
@@ -31,26 +38,41 @@ class MaintenanceResponse {
     this.status,
     this.notes,
     this.createdAt,
+    this.lineItems,
   });
 
-  factory MaintenanceResponse.fromJson(Map<String, dynamic> json) =>
-      MaintenanceResponse(
-        id: json['id'] ?? 0,
-        vehicleId: json['vehicleId'] ?? 0,
-        vehicleInfo: json['vehicleInfo'],
-        serviceType: json['serviceType'] ?? '',
-        description: json['description'],
-        mileageAtService: json['mileageAtService'],
-        cost: (json['cost'] as num?)?.toDouble(),
-        serviceDate: json['serviceDate'],
-        nextServiceMileage: json['nextServiceMileage'],
-        nextServiceDate: json['nextServiceDate'],
-        workshopName: json['workshopName'],
-        workshopAddress: json['workshopAddress'],
-        status: json['status'],
-        notes: json['notes'],
-        createdAt: json['createdAt'],
-      );
+  factory MaintenanceResponse.fromJson(Map<String, dynamic> json) {
+    List<MaintenanceLineItem>? lines;
+    final raw = json['lineItems'];
+    if (raw is List) {
+      lines = raw
+          .whereType<Map>()
+          .map((e) =>
+              MaintenanceLineItem.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return MaintenanceResponse(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      vehicleId: (json['vehicleId'] as num?)?.toInt() ?? 0,
+      vehicleInfo: json['vehicleInfo']?.toString(),
+      serviceType: json['serviceType']?.toString() ?? '',
+      description: json['description']?.toString(),
+      mileageAtService: (json['mileageAtService'] as num?)?.toInt(),
+      odometerStatus: json['odometerStatus']?.toString(),
+      serviceCategory: json['serviceCategory']?.toString(),
+      cost: (json['cost'] as num?)?.toDouble(),
+      serviceDate: json['serviceDate']?.toString(),
+      nextServiceMileage:
+          (json['nextServiceMileage'] as num?)?.toInt(),
+      nextServiceDate: json['nextServiceDate']?.toString(),
+      workshopName: json['workshopName']?.toString(),
+      workshopAddress: json['workshopAddress']?.toString(),
+      status: json['status']?.toString(),
+      notes: json['notes']?.toString(),
+      createdAt: json['createdAt']?.toString(),
+      lineItems: lines?.isEmpty == true ? null : lines,
+    );
+  }
 
   String get statusDisplay {
     switch (status) {

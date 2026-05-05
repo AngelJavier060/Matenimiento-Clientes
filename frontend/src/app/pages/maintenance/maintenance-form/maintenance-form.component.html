@@ -1,98 +1,531 @@
-<div class="form-page">
-  <div class="form-header">
-    <button class="btn-back" (click)="goBack()">
-      <span class="material-icons-round">arrow_back</span>
-    </button>
-    <h1>Nuevo Mantenimiento</h1>
-  </div>
+<div class="mf-page">
+  <header class="mf-toolbar">
+    <div class="mf-toolbar__inner">
+      <div class="mf-search-wrap">
+        <span class="material-symbols-outlined mf-search-wrap__ico">search</span>
+        <input class="mf-search-wrap__input" type="text" placeholder="Buscar flota..." readonly tabindex="-1" />
+      </div>
+      <nav class="mf-tabs" aria-label="Tipo de mantenimiento">
+        <a
+          class="mf-tabs__link"
+          [routerLink]="editOrNewBasePath()"
+          [queryParams]="flowQuery('preventivo')"
+          [class.mf-tabs__link--active]="categoriaQuery === 'preventivo'"
+        >
+          Preventivo
+        </a>
+        <a
+          class="mf-tabs__link"
+          [routerLink]="editOrNewBasePath()"
+          [queryParams]="flowQuery('correctivo')"
+          [class.mf-tabs__link--active]="categoriaQuery === 'correctivo'"
+        >
+          Correctivo
+        </a>
+        <a
+          class="mf-tabs__link"
+          routerLink="/maintenance"
+          [queryParams]="historialQuery()"
+        >
+          Historial
+        </a>
+      </nav>
+    </div>
+  </header>
 
-  <form (ngSubmit)="onSubmit()" class="form-content">
-    <div class="form-card">
-      <h3>Datos del Servicio</h3>
-      <div class="form-group">
-        <label>Vehículo *</label>
-        <select [(ngModel)]="formData.vehicleId" name="vehicleId">
-          <option [ngValue]="null">Seleccionar vehículo</option>
-          <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }}</option>
-        </select>
+  <form class="mf-form" (ngSubmit)="onSubmit()">
+    <div class="mf-page-header">
+      <div class="mf-page-header__titles">
+        <nav class="mf-breadcrumb" aria-label="Migas de pan">
+          <span>Mantenimientos</span>
+          <span class="material-symbols-outlined mf-breadcrumb__sep">chevron_right</span>
+          <span class="mf-breadcrumb__current">{{ isEditingMaintenance ? 'Editar registro de servicio' : 'Registro de Servicio' }}</span>
+        </nav>
+        <h1 class="mf-title">{{ isEditingMaintenance ? 'Ver / editar mantenimiento' : 'Registrar Mantenimiento' }}</h1>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tipo de servicio *</label>
-          <input type="text" [(ngModel)]="formData.serviceType" name="serviceType" placeholder="Cambio de aceite" required>
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <select [(ngModel)]="formData.status" name="status">
-            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Descripción</label>
-        <textarea [(ngModel)]="formData.description" name="description" rows="3" placeholder="Detalles del servicio..."></textarea>
+      <div class="mf-page-header__actions">
+        <button type="button" class="mf-btn mf-btn--ghost" (click)="goBack()">Cancelar</button>
+        <button
+          type="submit"
+          class="mf-btn mf-btn--primary"
+          [disabled]="submitting || loadingMaintenance || !!mensajeAlertaKmContraFicha"
+        >
+          <span class="material-symbols-outlined">save</span>
+          {{
+            submitting
+              ? 'Guardando...'
+              : isEditingMaintenance
+                ? 'Guardar cambios'
+                : 'Guardar Registro'
+          }}
+        </button>
       </div>
     </div>
 
-    <div class="form-card">
-      <h3>Detalles</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Kilometraje</label>
-          <input type="number" [(ngModel)]="formData.mileageAtService" name="mileageAtService" placeholder="50000">
-        </div>
-        <div class="form-group">
-          <label>Costo ($)</label>
-          <input type="number" step="0.01" [(ngModel)]="formData.cost" name="cost" placeholder="150.00">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Fecha del servicio</label>
-          <input type="date" [(ngModel)]="formData.serviceDate" name="serviceDate">
-        </div>
-        <div class="form-group"></div>
-      </div>
+    <div *ngIf="loadingMaintenance" class="mf-loading-maint" role="status" aria-busy="true">
+      <div class="spinner-lg mf-loading-maint__spinner"></div>
+      <span>Cargando mantenimiento…</span>
     </div>
 
-    <div class="form-card">
-      <h3>Próximo Servicio & Taller</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Próximo km</label>
-          <input type="number" [(ngModel)]="formData.nextServiceMileage" name="nextServiceMileage" placeholder="60000">
-        </div>
-        <div class="form-group">
-          <label>Próxima fecha</label>
-          <input type="date" [(ngModel)]="formData.nextServiceDate" name="nextServiceDate">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Taller</label>
-          <input type="text" [(ngModel)]="formData.workshopName" name="workshopName" placeholder="Nombre del taller">
-        </div>
-        <div class="form-group">
-          <label>Dirección</label>
-          <input type="text" [(ngModel)]="formData.workshopAddress" name="workshopAddress" placeholder="Dirección del taller">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Notas</label>
-        <textarea [(ngModel)]="formData.notes" name="notes" rows="3" placeholder="Notas adicionales..."></textarea>
-      </div>
-    </div>
+    <ng-container *ngIf="!loadingMaintenance">
+    <div class="mf-grid">
+      <div class="mf-col mf-col--main">
+        <!-- Detalles del servicio -->
+        <section class="mf-card mf-card--form">
+          <div class="mf-card__head">
+            <span class="material-symbols-outlined mf-card__head-icon">assignment</span>
+            <h2 class="mf-card__head-title">Detalles del Servicio</h2>
+          </div>
+          <div class="mf-card__body">
+            <div class="mf-field-stack">
+              <label class="mf-label">Vehículo en Servicio</label>
+              <div class="mf-vehicle-tile-wrap">
+                <div class="mf-vehicle-tile" [class.mf-vehicle-tile--empty]="!selectedVehicle">
+                  <ng-container *ngIf="selectedVehicle">
+                    <div class="mf-vehicle-tile__row">
+                      <div class="mf-vehicle-thumb">
+                        <img
+                          *ngIf="selectedVehicle.imageUrl"
+                          class="mf-vehicle-thumb__img"
+                          [src]="selectedVehicle.imageUrl"
+                          [alt]="selectedVehicle.brand + ' ' + selectedVehicle.model"
+                          loading="lazy"
+                        />
+                        <span *ngIf="!selectedVehicle.imageUrl" class="material-symbols-outlined mf-vehicle-thumb__fallback">directions_car</span>
+                      </div>
+                      <div class="mf-vehicle-tile__info">
+                        <div class="mf-vehicle-tile__line1">
+                          <span class="mf-vehicle-plate">{{ selectedVehicle.licensePlate || 'Sin placa' }}</span>
+                          <span class="mf-badge mf-badge--year">{{ selectedVehicle.year }}</span>
+                        </div>
+                        <p class="mf-vehicle-model">{{ selectedVehicle.brand }} {{ selectedVehicle.model }}</p>
+                        <p class="mf-vehicle-meta">
+                          <span class="material-symbols-outlined mf-vehicle-meta__ico">location_on</span>
+                          {{ selectedVehicle.clientName || 'Flota central' }}
+                          <ng-container *ngIf="selectedVehicle.isActive !== undefined"> · Activo</ng-container>
+                        </p>
+                      </div>
+                      <span class="material-symbols-outlined mf-vehicle-tile__caret">expand_more</span>
+                    </div>
+                  </ng-container>
+                  <div *ngIf="!selectedVehicle" class="mf-vehicle-empty">
+                    <span class="material-symbols-outlined mf-vehicle-empty__ico">touch_app</span>
+                    <p>Seleccioná un vehículo de la flota</p>
+                  </div>
+                  <select
+                    id="vehicleIdSelect"
+                    class="mf-vehicle-picker"
+                    [(ngModel)]="formData.vehicleId"
+                    (ngModelChange)="onVehicleIdChanged()"
+                    name="vehicleId"
+                    required
+                    aria-label="Seleccionar vehículo"
+                  >
+                    <option [ngValue]="null">Seleccionar vehículo</option>
+                    <option *ngFor="let x of vehicles" [ngValue]="x.id">{{ x.brand }} {{ x.model }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-    <div class="form-error" *ngIf="error">
-      <span class="material-icons-round">error</span>
+            <div class="mf-row-3">
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="serviceCategorySel">Categoría (preventivo/correctivo)</label>
+                <select
+                  id="serviceCategorySel"
+                  class="mf-input mf-input--select"
+                  [(ngModel)]="formData.serviceCategory"
+                  name="serviceCategory"
+                >
+                  <option *ngFor="let c of categoryOptions" [ngValue]="c.value">{{ c.label }}</option>
+                </select>
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="serviceTypeSel">Tipo de Servicio</label>
+                <select
+                  id="serviceTypeSel"
+                  class="mf-input mf-input--select"
+                  [(ngModel)]="formData.serviceType"
+                  name="serviceType"
+                  required
+                >
+                  <option value="" disabled>Elegir tipo</option>
+                  <option *ngFor="let opt of serviceTypeOptions" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mf-field mf-workshop-full">
+              <label class="mf-label mf-label--upper" for="workshopName">Taller</label>
+              <input
+                id="workshopName"
+                class="mf-input"
+                type="text"
+                [(ngModel)]="formData.workshopName"
+                name="workshopName"
+                placeholder="Nombre del taller o concesionario"
+              />
+            </div>
+
+            <div class="mf-row-4">
+              <div class="mf-field">
+                <span class="mf-label mf-label--upper">Estado</span>
+                <div class="mf-pill-group">
+                  <button
+                    type="button"
+                    class="mf-pill"
+                    [class.mf-pill--on]="formData.status === 'COMPLETED'"
+                    (click)="setStatusShortcut('COMPLETED')"
+                  >
+                    Completado
+                  </button>
+                  <button
+                    type="button"
+                    class="mf-pill"
+                    [class.mf-pill--on]="formData.status === 'IN_PROGRESS'"
+                    (click)="setStatusShortcut('IN_PROGRESS')"
+                  >
+                    En Proceso
+                  </button>
+                </div>
+                <select class="mf-sr-only" [(ngModel)]="formData.status" name="status" tabindex="-1" aria-hidden="true">
+                  <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+                </select>
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="serviceDate">Fecha de Servicio</label>
+                <input id="serviceDate" class="mf-input" type="date" [(ngModel)]="formData.serviceDate" name="serviceDate" />
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="nextServiceDate">Próximo Servicio</label>
+                <input id="nextServiceDate" class="mf-input" type="date" [(ngModel)]="formData.nextServiceDate" name="nextServiceDate" />
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="nextServiceMileage">Próximo Kilometraje</label>
+                <ng-container *ngIf="!isEditingMaintenance">
+                  <select
+                    id="proximoKmPasoSel"
+                    class="mf-input mf-input--select mf-input--select-intervalo mf-select--marg"
+                    name="proximoKmPasoSel"
+                    [(ngModel)]="proximoKmPasoElegido"
+                    (ngModelChange)="onSeleccionPasoProximoKmCambiada()"
+                    aria-label="Kilometraje incremental hasta el siguiente mantenimiento"
+                  >
+                    <option *ngFor="let paso of opcionesPasoKm" [ngValue]="paso">
+                      Incremento: +{{ paso.toLocaleString('es') }} km
+                    </option>
+                  </select>
+                </ng-container>
+                <div class="mf-input-suffix-wrap">
+                  <input
+                    id="nextServiceMileage"
+                    class="mf-input mf-input--num"
+                    type="number"
+                    [(ngModel)]="formData.nextServiceMileage"
+                    name="nextServiceMileage"
+                    placeholder="Ej: 20000"
+                    (ngModelChange)="onProximoKmCampoPorUsuario()"
+                  />
+                  <span class="mf-input-suffix">km</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actividades realizadas -->
+            <div class="mf-activities">
+              <div class="mf-activities__head">
+                <label class="mf-label mf-label--wide mf-label--upper">Descripción de Trabajos</label>
+                <button type="button" class="mf-link-btn" (click)="addActivity()">
+                  <span class="material-symbols-outlined">add_circle</span>
+                  Añadir actividad
+                </button>
+              </div>
+              <p
+                class="mf-activities-plan-kicker"
+                *ngIf="
+                  !isEditingMaintenance &&
+                  formData.vehicleId &&
+                  !fleetPlanMatchLoading &&
+                  cuentaActividadesPlanActivas > 0
+                "
+              >
+                Lo que ejecutes cargalo manualmente aquí (
+                <strong>Añadir actividad</strong>
+                ).
+                <!-- -->
+                Opcionalmente insertá todas las líneas del plan MP que falten —
+                <button type="button" class="mf-link-btn mf-link-btn--inline" (click)="anadirActividadesDelPlanNoPresentes()">
+                  cargar líneas pendientes del plan
+                </button>
+              </p>
+              <div class="mf-activities__list">
+                <div
+                  *ngFor="let row of activityLines; let i = index; trackBy: trackByIdx"
+                  class="mf-activity-row"
+                  [class.mf-activity-row--dash]=" !row.text && i === activityLines.length - 1 "
+                >
+                  <div class="mf-activity-row__text">
+                    <input
+                      class="mf-activity-input"
+                      type="text"
+                      [(ngModel)]="row.text"
+                      [name]="'act_' + i"
+                      placeholder="Describe la actividad realizada…"
+                      [class.mf-activity-input--italic]=" !row.text && i === activityLines.length - 1 "
+                    />
+                  </div>
+                  <div class="mf-activity-row__chk">
+                    <span class="mf-done-label">Realizado</span>
+                    <input
+                      class="mf-checkbox"
+                      type="checkbox"
+                      [(ngModel)]="row.done"
+                      [name]="'done_' + i"
+                      [disabled]="!(row.text && row.text.trim())"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mf-field mf-odometer-block">
+              <label class="mf-label mf-label--upper" for="odometerStatusSel">Estado del odómetro</label>
+              <select
+                id="odometerStatusSel"
+                class="mf-input mf-input--select"
+                [(ngModel)]="formData.odometerStatus"
+                name="odometerStatus"
+                (ngModelChange)="onOdometerModeChange()"
+              >
+                <option value="KNOWN">Km conocido (verificado)</option>
+                <option value="ESTIMATED">Km estimado / aproximado</option>
+                <option value="UNKNOWN">Sin kilometraje (cliente no informa)</option>
+              </select>
+              <p *ngIf="formData.odometerStatus === 'UNKNOWN'" class="mf-hint">
+                El historial del vehículo no se actualizará con km hasta que registre uno verificado.
+              </p>
+            </div>
+
+            <div class="mf-row-2-split">
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="mileageAtService">Kilometraje Actual</label>
+                <div class="mf-input-suffix-wrap mf-input-suffix-wrap--large">
+                  <input
+                    id="mileageAtService"
+                    class="mf-input mf-input--accent"
+                    [class.mf-input--km-invalid]="mensajeAlertaKmContraFicha"
+                    type="number"
+                    [(ngModel)]="formData.mileageAtService"
+                    name="mileageAtService"
+                    [disabled]="formData.odometerStatus === 'UNKNOWN'"
+                    (ngModelChange)="onMileageAtServiceChanged()"
+                  />
+                  <span class="mf-input-suffix mf-input-suffix--lg">km</span>
+                </div>
+                <p
+                  *ngIf="odometroFichaAyudaTxt && formData.odometerStatus !== 'UNKNOWN' && !mensajeAlertaKmContraFicha"
+                  class="mf-hint"
+                >
+                  {{ odometroFichaAyudaTxt }}
+                </p>
+                <p *ngIf="mensajeAlertaKmContraFicha" class="mf-field-alert" role="alert">
+                  <span class="material-symbols-outlined mf-field-alert__ico" aria-hidden="true">error</span>
+                  {{ mensajeAlertaKmContraFicha }}
+                </p>
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="costField">Costo Total (Estimado)</label>
+                <div class="mf-input-prefix-wrap mf-input-prefix-wrap--large">
+                  <span class="mf-input-prefix">$</span>
+                  <input
+                    id="costField"
+                    class="mf-input mf-input--accent mf-input--cost"
+                    type="number"
+                    step="0.01"
+                    [(ngModel)]="formData.cost"
+                    name="cost"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="mf-advanced-toggle" (click)="showAdvanced = !showAdvanced">
+              {{ showAdvanced ? 'Ocultar' : 'Mostrar' }} opciones avanzadas
+            </button>
+            <div class="mf-advanced" *ngIf="showAdvanced">
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="reportedIssues">
+                  Fallas o síntomas (correctivo — una línea por ítem)
+                </label>
+                <textarea
+                  id="reportedIssues"
+                  class="mf-textarea"
+                  rows="4"
+                  [(ngModel)]="formData.reportedIssues"
+                  name="reportedIssues"
+                  placeholder="Ej.: Ruido al frenar en frío&#10;Pérdida de potencia subiendo"
+                ></textarea>
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="workshopAddress">Dirección del taller</label>
+                <input id="workshopAddress" class="mf-input" type="text" [(ngModel)]="formData.workshopAddress" name="workshopAddress" />
+              </div>
+              <div class="mf-field">
+                <label class="mf-label mf-label--upper" for="notes">Notas</label>
+                <textarea id="notes" class="mf-textarea" rows="3" [(ngModel)]="formData.notes" name="notes"></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Checklist alertas -->
+        <section class="mf-card mf-card--table">
+          <div class="mf-table-head">
+            <div class="mf-table-head__titles">
+              <h3 class="mf-table-head__title">
+                <span class="material-symbols-outlined mf-table-head__ico">checklist</span>
+                Referencias vs plan (esta visita)
+              </h3>
+              <p class="mf-table-head__kicker">
+                Cada fila corresponde a lo que cargaste arriba en «Descripción de trabajos»; si el texto encaja con
+                una actividad del plan MP ves intervalos de referencia en la segunda línea y el mismo check en Estado.
+              </p>
+            </div>
+          </div>
+          <div class="mf-table-scroll">
+            <table class="mf-table">
+              <thead>
+                <tr>
+                  <th>Actividad</th>
+                  <th>Insumos</th>
+                  <th>Prioridad</th>
+                  <th class="mf-table__th-right">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of checklistTableRows">
+                  <td>
+                    <div class="mf-table__title">{{ row.title }}</div>
+                    <div
+                      class="mf-table__sub"
+                      [class.mf-table__sub--error]="row.dueTone === 'error'"
+                      [class.mf-table__sub--amber]="row.dueTone === 'amber' || row.dueTone === 'warning'"
+                    >
+                      {{ row.dueSecondary }}
+                    </div>
+                  </td>
+                  <td class="mf-table__supplies">{{ row.supplies }}</td>
+                  <td>
+                    <span
+                      class="mf-prio"
+                      [class.mf-prio--std]="row.priority === 'standard'"
+                      [class.mf-prio--high]="row.priority === 'high_alert'"
+                      [class.mf-prio--soon]="row.priority === 'soon'"
+                    >
+                      <ng-container [ngSwitch]="row.priority">
+                        <ng-container *ngSwitchCase="'standard'">ESTÁNDAR</ng-container>
+                        <ng-container *ngSwitchCase="'high_alert'">ALTA ALERTA</ng-container>
+                        <ng-container *ngSwitchCase="'soon'">PRÓXIMO</ng-container>
+                        <ng-container *ngSwitchDefault>ESTÁNDAR</ng-container>
+                      </ng-container>
+                    </span>
+                  </td>
+                  <td class="mf-table__icon-cell">
+                    <span
+                      class="material-symbols-outlined mf-status-ico mf-status-check"
+                      *ngIf="row.statusIcon === 'check_circle'"
+                      >check_circle</span
+                    >
+                    <span class="material-symbols-outlined mf-status-ico mf-status-err" *ngIf="row.statusIcon === 'error'">error</span>
+                    <span class="material-symbols-outlined mf-status-ico mf-status-warn" *ngIf="row.statusIcon === 'warning'"
+                      >warning</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="mf-col mf-col--side">
+        <section class="mf-card mf-card--insights">
+          <div class="mf-insights-head">
+            <div class="mf-insights-head__left">
+              <span class="material-symbols-outlined">precision_manufacturing</span>
+              <h3 class="mf-insights-head__title">
+                {{ isCorrectiveUx ? 'Recomendaciones (correctivo)' : isPreventiveUx ? 'Indicaciones (preventivo)' : 'Referencias del taller' }}
+              </h3>
+            </div>
+            <span class="mf-insights-pill" *ngIf="fleetPlanMatch?.matchMode">{{ fleetPlanMatch!.matchMode }}</span>
+          </div>
+          <div class="mf-insights-body">
+            <p class="mf-insights-intro" *ngIf="fleetPlanMatch?.hint">
+              {{ fleetPlanMatch!.hint }}
+            </p>
+
+            <ng-container *ngIf="!fleetPlanMatchLoading && isPreventiveUx">
+              <p class="mf-label mf-label--upper" style="margin: 16px 0 8px">Plan cargado manual (fabricante/MM)</p>
+              <ul class="mf-side-bullet" *ngIf="fleetPlanMatch?.plan?.activities?.length">
+                <li *ngFor="let a of fleetPlanMatch!.plan!.activities">
+                  <strong>{{ a.nombre }}</strong> — cada {{ a.intervaloKm }} km · {{ a.intervaloMeses }} meses ({{ a.tipo }})
+                </li>
+              </ul>
+              <p *ngIf="!fleetPlanMatch?.plan?.activities?.length" class="mf-hint">Sin actividades en el plan coincidente.</p>
+            </ng-container>
+
+            <ng-container *ngIf="!fleetPlanMatchLoading && isCorrectiveUx">
+              <p class="mf-label mf-label--upper" style="margin: 16px 0 8px">Fabricante · qué revisar o cambiar (referencia)</p>
+              <ul class="mf-side-bullet" *ngIf="fleetPlanMatch?.plan?.activities?.length">
+                <li *ngFor="let a of fleetPlanMatch!.plan!.activities">Revisar / {{ a.nombre }}</li>
+              </ul>
+              <p *ngIf="!fleetPlanMatch?.plan?.activities?.length" class="mf-hint">{{ fleetPlanMatch?.hint }}</p>
+
+              <p class="mf-label mf-label--upper" style="margin: 22px 0 8px">Cliente / taller (fallas cargadas)</p>
+              <ul class="mf-side-bullet" *ngIf="symptomLines.length">
+                <li *ngFor="let s of symptomLines">{{ s }}</li>
+              </ul>
+              <p *ngIf="!symptomLines.length" class="mf-hint">Cuando cargues síntomas en «Fallas o síntomas» (opciones avanzadas), aparecen aquí como guía ejecutable.</p>
+            </ng-container>
+
+            <ng-container *ngIf="!fleetPlanMatchLoading && !isPreventiveUx && !isCorrectiveUx">
+              <ul class="mf-side-bullet" *ngIf="fleetPlanMatch?.plan?.activities?.length">
+                <li *ngFor="let a of fleetPlanMatch!.plan!.activities">{{ a.nombre }} — cada {{ a.intervaloKm }} km</li>
+              </ul>
+              <ul class="mf-side-bullet" *ngIf="symptomLines.length">
+                <li *ngFor="let s of symptomLines"><strong>Síntoma:</strong> {{ s }}</li>
+              </ul>
+              <p *ngIf="!fleetPlanMatch?.plan?.activities?.length && !symptomLines.length && formData.vehicleId" class="mf-hint">
+                {{ fleetPlanMatch?.hint || 'Sin datos de plan ni síntomas.' }}
+              </p>
+            </ng-container>
+
+            <p class="mf-hint" *ngIf="fleetPlanMatchLoading && formData.vehicleId">Cargando plan del vehículo…</p>
+          </div>
+        </section>
+
+        <section class="mf-quote">
+          <div class="mf-quote__head">
+            <div class="mf-quote__avatar">
+              <span class="material-symbols-outlined">auto_awesome</span>
+            </div>
+            <div>
+              <h4 class="mf-quote__title">Precisión Fleet Core</h4>
+              <p class="mf-quote__sub">Asistente de Mantenimiento</p>
+            </div>
+          </div>
+          <blockquote class="mf-quote__text">
+            Realizar los mantenimientos preventivos a tiempo reduce los costos de reparación correctiva en un promedio del 22%
+            anual.
+          </blockquote>
+        </section>
+      </aside>
+    </div>
+    </ng-container>
+
+    <div class="mf-form-error" *ngIf="error" role="alert">
+      <span class="material-symbols-outlined">error</span>
       {{ error }}
-    </div>
-
-    <div class="form-actions">
-      <button type="button" class="btn-cancel" (click)="goBack()">Cancelar</button>
-      <button type="submit" class="btn-submit" [disabled]="submitting">
-        {{ submitting ? 'Guardando...' : 'Guardar Mantenimiento' }}
-      </button>
     </div>
   </form>
 </div>

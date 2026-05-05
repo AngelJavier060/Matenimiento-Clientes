@@ -1,6 +1,9 @@
 package com.vehicle.maintenance.dto.maintenance;
 
 import com.vehicle.maintenance.enums.MaintenanceStatus;
+import com.vehicle.maintenance.enums.OdometerStatus;
+import com.vehicle.maintenance.enums.ServiceCategory;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +15,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -27,9 +32,16 @@ public class MaintenanceRequest {
 
     private String description;
 
-    @NotNull(message = "El kilometraje del servicio es obligatorio")
     @Min(value = 0, message = "El kilometraje no puede ser negativo")
     private Integer mileageAtService;
+
+    /**
+     * Si no viene, se deduce del kilometraje: con valor → KNOWN; sin valor → UNKNOWN.
+     */
+    private OdometerStatus odometerStatus;
+
+    @Builder.Default
+    private ServiceCategory serviceCategory = ServiceCategory.MIXED;
 
     @Min(value = 0, message = "El costo no puede ser negativo")
     private BigDecimal cost;
@@ -52,4 +64,8 @@ public class MaintenanceRequest {
     private String documentsUrl;
 
     private String notes;
+
+    @Valid
+    @Builder.Default
+    private List<MaintenanceLineRequest> lineItems = new ArrayList<>();
 }

@@ -1,3 +1,15 @@
+/** Coincide con backend MaintenanceLineType y MaintenanceLineResponse */
+export type MaintenanceLineType = 'RECOMMENDED' | 'PERFORMED' | 'SYMPTOM';
+
+export interface MaintenanceLineItem {
+  id: number;
+  lineType: MaintenanceLineType | string;
+  description: string;
+  done?: boolean;
+  includedInRecord?: boolean;
+  sortOrder?: number;
+}
+
 export interface MaintenanceResponse {
   id: number;
   vehicleId: number;
@@ -5,6 +17,8 @@ export interface MaintenanceResponse {
   serviceType: string;
   description?: string;
   mileageAtService?: number;
+  odometerStatus?: string;
+  serviceCategory?: string;
   cost?: number;
   serviceDate?: string;
   nextServiceMileage?: number;
@@ -13,5 +27,6 @@ export interface MaintenanceResponse {
   workshopAddress?: string;
   status?: string;
   notes?: string;
+  lineItems?: MaintenanceLineItem[];
   createdAt?: string;
 }

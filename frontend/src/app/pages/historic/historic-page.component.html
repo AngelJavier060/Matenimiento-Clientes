@@ -1,0 +1,85 @@
+<div class="historic">
+  <div class="historic__head">
+    <div>
+      <h1 class="historic__title">Histórico</h1>
+      <p class="historic__subtitle">Todas las placas registradas · descargá el informe PDF del historial de cada unidad.</p>
+    </div>
+  </div>
+
+  <div class="historic__toolbar">
+    <label class="historic__filter">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="search"
+        [(ngModel)]="filterPlate"
+        name="filterPlate"
+        placeholder="Filtrar por placa..."
+        autocomplete="off"
+      />
+    </label>
+  </div>
+
+  <div *ngIf="loadingList" class="historic__state">Cargando vehículos…</div>
+  <div *ngIf="!loadingList && errorList" class="historic__state historic__state--error">{{ errorList }}</div>
+
+  <div *ngIf="!loadingList && !errorList" class="historic__table-wrap">
+    <table class="historic__table">
+      <thead>
+        <tr>
+          <th class="historic__col-thumb" scope="col" title="Foto"><span class="historic__sr-only">Foto</span></th>
+          <th>Placa</th>
+          <th>Marca / modelo</th>
+          <th>Año</th>
+          <th class="historic__col-num">Km</th>
+          <th class="historic__col-num">Servicios</th>
+          <th class="historic__col-action">Informe PDF</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of filteredVehicles">
+          <td class="historic__thumb-cell">
+            <div class="historic__thumb-wrap" *ngIf="v.imageUrl">
+              <img class="historic__thumb" [src]="v.imageUrl" [attr.alt]="" />
+            </div>
+            <div class="historic__thumb-wrap historic__thumb-wrap--empty" *ngIf="!v.imageUrl">
+              <span class="material-symbols-outlined historic__thumb-ico">directions_car</span>
+            </div>
+          </td>
+          <td class="historic__plate">{{ v.licensePlate || '—' }}</td>
+          <td>{{ v.brand }} {{ v.model }}</td>
+          <td>{{ v.year }}</td>
+          <td class="historic__col-num">{{ v.mileage != null ? (v.mileage | number : '1.0-0') + ' km' : '—' }}</td>
+          <td class="historic__col-num">{{ v.maintenanceCount }}</td>
+          <td class="historic__col-action">
+            <button
+              type="button"
+              class="historic__pdf-btn"
+              [disabled]="pdfLoadingVehicleId != null"
+              (click)="downloadHistoryPdf(v)"
+            >
+              <span class="material-symbols-outlined">picture_as_pdf</span>
+              <span *ngIf="pdfLoadingVehicleId !== v.id">PDF</span>
+              <span *ngIf="pdfLoadingVehicleId === v.id">Generando…</span>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!filteredVehicles.length">
+          <td colspan="7" class="historic__empty">No hay vehículos que coincidan con el filtro.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Captura off-screen: solo existe mientras se arma el PDF -->
+<div class="historic-pdf-layer" *ngIf="pdfContext" aria-hidden="true">
+  <div #pdfMount class="historic-pdf-mount">
+    <app-maintenance-history-report
+      [vehicle]="pdfContext.vehicle"
+      [maintenances]="pdfContext.maintenances"
+      [nextServices]="pdfContext.nextServices"
+      [reportId]="pdfContext.reportId"
+      [generatedLabel]="pdfContext.generatedLabel"
+    />
+  </div>
+</div>

@@ -1,6 +1,8 @@
 package com.vehicle.maintenance.model;
 
 import com.vehicle.maintenance.enums.MaintenanceStatus;
+import com.vehicle.maintenance.enums.OdometerStatus;
+import com.vehicle.maintenance.enums.ServiceCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,6 +11,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "maintenance")
@@ -37,8 +41,19 @@ public class Maintenance {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "mileage_at_service", nullable = false)
+    /** Null cuando el cliente no conoce o no proporciona kilometraje. */
+    @Column(name = "mileage_at_service")
     private Integer mileageAtService;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "odometer_status", nullable = false, length = 20)
+    @Builder.Default
+    private OdometerStatus odometerStatus = OdometerStatus.KNOWN;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_category", nullable = false, length = 20)
+    @Builder.Default
+    private ServiceCategory serviceCategory = ServiceCategory.MIXED;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal cost;
@@ -68,6 +83,11 @@ public class Maintenance {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @OneToMany(mappedBy = "maintenance", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("sortOrder ASC, id ASC")
+    @Builder.Default
+    private List<MaintenanceLineItem> lineItems = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

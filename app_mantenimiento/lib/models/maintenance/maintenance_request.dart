@@ -3,6 +3,9 @@ class MaintenanceRequest {
   final String serviceType;
   final String? description;
   final int? mileageAtService;
+  /// Si no se envía, el backend deduce según hay o no kilometraje.
+  final String? odometerStatus;
+  final String? serviceCategory;
   final double? cost;
   final String? serviceDate;
   final int? nextServiceMileage;
@@ -17,6 +20,8 @@ class MaintenanceRequest {
     required this.serviceType,
     this.description,
     this.mileageAtService,
+    this.odometerStatus,
+    this.serviceCategory,
     this.cost,
     this.serviceDate,
     this.nextServiceMileage,
@@ -32,6 +37,8 @@ class MaintenanceRequest {
         'serviceType': serviceType,
         'description': description,
         'mileageAtService': mileageAtService,
+        if (odometerStatus != null) 'odometerStatus': odometerStatus,
+        'serviceCategory': serviceCategory ?? 'MIXED',
         'cost': cost,
         'serviceDate': serviceDate,
         'nextServiceMileage': nextServiceMileage,

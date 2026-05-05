@@ -6,29 +6,30 @@ import 'api_service.dart';
 
 class AuthService {
   Future<AuthResponse> register(RegisterRequest request) async {
-    final data = await ApiService.post(
+    final data = ApiPayload.decodeMap(await ApiService.post(
       ApiConfig.authRegister,
       body: request.toJson(),
       auth: false,
-    );
+    ));
     final authResponse = AuthResponse.fromJson(data);
     await ApiService.saveToken(authResponse.token);
     return authResponse;
   }
 
   Future<AuthResponse> login(LoginRequest request) async {
-    final data = await ApiService.post(
+    final data = ApiPayload.decodeMap(await ApiService.post(
       ApiConfig.authLogin,
       body: request.toJson(),
       auth: false,
-    );
+    ));
     final authResponse = AuthResponse.fromJson(data);
     await ApiService.saveToken(authResponse.token);
     return authResponse;
   }
 
   Future<AuthResponse> refreshToken() async {
-    final data = await ApiService.post(ApiConfig.authRefresh);
+    final data =
+        ApiPayload.decodeMap(await ApiService.post(ApiConfig.authRefresh));
     final authResponse = AuthResponse.fromJson(data);
     await ApiService.saveToken(authResponse.token);
     return authResponse;

@@ -31,20 +31,23 @@ class VehicleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> createVehicle(VehicleRequest request) async {
+  /// [`null`] si hay error — devuelve el vehículo creado por si se debe subir foto después.
+  Future<VehicleResponse?> createVehicle(VehicleRequest request) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await _vehicleService.createVehicle(request);
+      final created = await _vehicleService.createVehicle(request);
       await loadVehicles();
-      return true;
+      _isLoading = false;
+      notifyListeners();
+      return created;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
       _isLoading = false;
       notifyListeners();
-      return false;
+      return null;
     }
   }
 
@@ -78,6 +81,37 @@ class VehicleProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
       _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> uploadVehiclePhoto({
+    required int vehicleId,
+    required String localFilePath,
+  }) async {
+    _error = null;
+    notifyListeners();
+    try {
+      await _vehicleService.uploadVehiclePhoto(
+        vehicleId: vehicleId,
+        localFilePath: localFilePath,
+      );
+      await loadVehicles();
+      VehicleResponse? synced;
+      for (final v in _vehicles) {
+        if (v.id == vehicleId) {
+          synced = v;
+          break;
+        }
+      }
+      if (synced != null && _selectedVehicle?.id == vehicleId) {
+        _selectedVehicle = synced;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return false;
     }

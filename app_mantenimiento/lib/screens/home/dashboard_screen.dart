@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/colors.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/reminder_provider.dart';
 import '../../providers/vehicle_provider.dart';
 import '../../widgets/stats_card.dart';
+import '../historic/historic_pdf_screen.dart';
+import '../reminders/reminder_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,13 +21,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<VehicleProvider>().loadVehicles();
+      context.read<ReminderProvider>().refreshDashboardCounters();
     });
+  }
+
+  Future<void> _refreshAll() async {
+    await context.read<VehicleProvider>().loadVehicles();
+    await context.read<ReminderProvider>().refreshDashboardCounters();
   }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     final vehicles = context.watch<VehicleProvider>().vehicles;
+
+    final dueCount =
+        context.select<ReminderProvider, int>((p) => p.dueCountCached);
+    final activeReminders =
+        context.select<ReminderProvider, int>((p) => p.activeRemindersCached);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => context.read<VehicleProvider>().loadVehicles(),
+        onRefresh: _refreshAll,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -136,21 +150,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: StatsCard(
-                      title: 'Recordatorios',
-                      value: '${vehicles.length * 2}',
-                      icon: Icons.notifications_rounded,
+                      title: 'Por vencer',
+                      value: '$dueCount',
+                      icon: Icons.timer_outlined,
                       color: AppColors.info,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              StatsCard(
+                title: 'Recordatorios activos',
+                value: '$activeReminders',
+                icon: Icons.notifications_active_rounded,
+                color: AppColors.warning,
+              ),
+              const SizedBox(height: 20),
               const Text(
                 'Acciones Rápidas',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Los avisos se actualizan al registrar mantenimiento o pactar próximo servicio en la ficha del vehículo.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary.withOpacity(0.95),
+                  height: 1.35,
                 ),
               ),
               const SizedBox(height: 12),
@@ -160,7 +190,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _QuickActionCard(
                       icon: Icons.add_circle_rounded,
                       label: 'Agregar\nVehículo',
-                      onTap: () => Navigator.pushNamed(context, '/vehicles/form'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/vehicles/form'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -168,20 +199,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _QuickActionCard(
                       icon: Icons.build_circle_rounded,
                       label: 'Nuevo\nMantenimiento',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/maintenance/form'),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        '/maintenance/form',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _QuickActionCard(
-                      icon: Icons.notification_add_rounded,
-                      label: 'Nuevo\nRecordatorio',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/reminders/form'),
+                      icon: Icons.notifications_rounded,
+                      label: 'Lista de\navisos',
+                      onTap: () {
+                        Navigator.push<void>(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ReminderListScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const HistoricPdfScreen(),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.picture_as_pdf_rounded,
+                            color: AppColors.accent, size: 34),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Historial en PDF',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Generar PDF por unidad (pestaña «Histórico» abajo)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            color: AppColors.textSecondary.withOpacity(0.55)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

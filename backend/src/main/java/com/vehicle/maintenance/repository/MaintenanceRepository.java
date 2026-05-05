@@ -35,4 +35,6 @@ public interface MaintenanceRepository extends JpaRepository<Maintenance, Long> 
     long countByUserId(Long userId);
 
     long countByVehicleId(Long vehicleId);
+
+    Optional<Maintenance> findFirstByVehicle_IdOrderByServiceDateDescIdDesc(Long vehicleId);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/colors.dart';
 import '../models/vehicle/vehicle_response.dart';
+import '../utils/vehicle_image_url.dart';
 
 class VehicleCard extends StatelessWidget {
   final VehicleResponse vehicle;
@@ -16,6 +17,9 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thumb = VehicleImageUrl.resolve(vehicle.imageUrl);
+    final hasPhoto = VehicleImageUrl.canLoadNetwork(vehicle.imageUrl);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
@@ -25,23 +29,25 @@ class VehicleCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.directions_car_rounded,
-                  color: AppColors.accent,
-                  size: 28,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: hasPhoto && thumb != null
+                      ? Image.network(
+                          thumb,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _placeholder(),
+                        )
+                      : _placeholder(),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       vehicle.fullName,
@@ -50,6 +56,8 @@ class VehicleCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -58,23 +66,33 @@ class VehicleCard extends StatelessWidget {
                           const Icon(Icons.confirmation_number,
                               size: 14, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
-                          Text(
-                            vehicle.licensePlate!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              vehicle.licensePlate!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                         ],
                         const Icon(Icons.speed,
                             size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
-                        Text(
-                          '${vehicle.mileage ?? 0} km',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                        Flexible(
+                          flex: vehicle.licensePlate != null ? 3 : 1,
+                          child: Text(
+                            '${vehicle.mileage ?? 0} km',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -84,14 +102,33 @@ class VehicleCard extends StatelessWidget {
               ),
               if (onDelete != null)
                 IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 40, minHeight: 40),
                   icon: const Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 20),
+                      color: AppColors.error, size: 22),
                   onPressed: onDelete,
                 ),
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              const SizedBox(
+                width: 28,
+                child: Icon(Icons.chevron_right,
+                    size: 22, color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      color: AppColors.accent.withOpacity(0.12),
+      child: const Icon(
+        Icons.directions_car_rounded,
+        color: AppColors.accent,
+        size: 28,
       ),
     );
   }

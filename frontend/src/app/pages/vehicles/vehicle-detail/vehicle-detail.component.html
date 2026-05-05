@@ -106,13 +106,22 @@
       <div class="maintenance-list" *ngIf="maintenances.length > 0">
         <div class="maintenance-item" *ngFor="let m of maintenances">
           <div class="maint-header">
+            <span *ngIf="categoryLabel(m.serviceCategory)" class="cat-pill">{{ categoryLabel(m.serviceCategory) }}</span>
             <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
             <span class="maint-date">{{ m.serviceDate || '-' }}</span>
           </div>
           <h4>{{ m.serviceType }}</h4>
           <p *ngIf="m.description">{{ m.description }}</p>
+          <ul *ngIf="m.lineItems?.length" class="line-mini">
+            <li *ngFor="let li of m.lineItems">
+              <span class="line-mini__tag">{{ lineTypeShort(li.lineType) }}</span>
+              {{ li.description }}
+            </li>
+          </ul>
           <div class="maint-meta">
-            <span *ngIf="m.mileageAtService"><span class="material-icons-round">speed</span>{{ m.mileageAtService }} km</span>
+            <span *ngIf="mileageSummary(m) as kms">
+              <span class="material-icons-round">speed</span>{{ kms }}
+            </span>
             <span *ngIf="m.cost"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
             <span *ngIf="m.workshopName"><span class="material-icons-round">store</span>{{ m.workshopName }}</span>
           </div>
@@ -124,15 +133,21 @@
     <div *ngIf="activeTab === 'reminders'" class="tab-content">
       <div class="tab-header">
         <h3>Recordatorios</h3>
-        <button class="btn-primary" [routerLink]="['/reminders/new']" [queryParams]="{vehicleId: vehicle.id}">
-          <span class="material-icons-round">add</span>
-          Nuevo
-        </button>
+        <div class="tab-header-actions">
+          <a class="btn-secondary" [routerLink]="['/reminders']" [queryParams]="{ vehicleId: vehicle.id }">
+            <span class="material-icons-round">open_in_new</span>
+            Vista módulo
+          </a>
+          <a class="btn-primary" [routerLink]="['/maintenance/new']" [queryParams]="{ vehicleId: vehicle.id }">
+            <span class="material-icons-round">build</span>
+            Mantenimiento (próximo servicio)
+          </a>
+        </div>
       </div>
 
       <div *ngIf="reminders.length === 0" class="empty-tab">
         <span class="material-icons-round">notifications_off</span>
-        <p>Sin recordatorios configurados</p>
+        <p>Sin recordatorios activos. Se generan al guardar un mantenimiento con próxima fecha o kilometraje.</p>
       </div>
 
       <div class="reminders-list" *ngIf="reminders.length > 0">

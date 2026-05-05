@@ -1,6 +1,8 @@
 package com.vehicle.maintenance.dto.maintenance;
 
 import com.vehicle.maintenance.enums.MaintenanceStatus;
+import com.vehicle.maintenance.enums.OdometerStatus;
+import com.vehicle.maintenance.enums.ServiceCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +11,8 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,6 +26,8 @@ public class MaintenanceResponse {
     private String serviceType;
     private String description;
     private Integer mileageAtService;
+    private OdometerStatus odometerStatus;
+    private ServiceCategory serviceCategory;
     private BigDecimal cost;
     private LocalDate serviceDate;
     private Integer nextServiceMileage;
@@ -31,5 +37,7 @@ public class MaintenanceResponse {
     private MaintenanceStatus status;
     private String documentsUrl;
     private String notes;
+    @Builder.Default
+    private List<MaintenanceLineResponse> lineItems = new ArrayList<>();
     private LocalDateTime createdAt;
 }

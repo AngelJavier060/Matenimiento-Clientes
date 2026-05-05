@@ -64,7 +64,12 @@ export class VehicleDetailComponent implements OnInit {
 
   getStatusClass(status?: string): string {
     switch (status) {
-      case 'COMPLETED': return 'completed';
+      case 'DRAFT':
+        return 'scheduled';
+      case 'QUOTE':
+        return 'scheduled';
+      case 'COMPLETED':
+        return 'completed';
       case 'IN_PROGRESS': return 'in-progress';
       case 'SCHEDULED': return 'scheduled';
       case 'CANCELLED': return 'cancelled';
@@ -74,11 +79,56 @@ export class VehicleDetailComponent implements OnInit {
 
   getStatusLabel(status?: string): string {
     switch (status) {
-      case 'COMPLETED': return 'Completado';
+      case 'DRAFT':
+        return 'Borrador';
+      case 'QUOTE':
+        return 'Cotización';
+      case 'COMPLETED':
+        return 'Completado';
       case 'IN_PROGRESS': return 'En Progreso';
       case 'SCHEDULED': return 'Programado';
       case 'CANCELLED': return 'Cancelado';
       default: return status || 'Desconocido';
+    }
+  }
+
+  mileageSummary(m: MaintenanceResponse): string | null {
+    if (m.mileageAtService != null) {
+      const tag =
+        (m.odometerStatus || '').toUpperCase() === 'ESTIMATED'
+          ? ' (est.)'
+          : '';
+      return `${m.mileageAtService} km${tag}`;
+    }
+    if ((m.odometerStatus || '').toUpperCase() === 'UNKNOWN') {
+      return 'Km no informado';
+    }
+    return null;
+  }
+
+  categoryLabel(cat?: string): string {
+    switch ((cat || '').toUpperCase()) {
+      case 'PREVENTIVE':
+        return 'Preventivo';
+      case 'CORRECTIVE':
+        return 'Correctivo';
+      case 'MIXED':
+        return 'Mixto';
+      default:
+        return '';
+    }
+  }
+
+  lineTypeShort(code?: string): string {
+    switch ((code || '').toUpperCase()) {
+      case 'RECOMMENDED':
+        return 'Recom.';
+      case 'PERFORMED':
+        return 'Realiz.';
+      case 'SYMPTOM':
+        return 'Falla';
+      default:
+        return 'Ítem';
     }
   }
 

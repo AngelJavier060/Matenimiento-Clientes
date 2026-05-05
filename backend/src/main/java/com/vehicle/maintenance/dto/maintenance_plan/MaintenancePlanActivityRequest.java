@@ -24,4 +24,10 @@ public class MaintenancePlanActivityRequest {
 
     @NotNull(message = "El intervalo en meses es obligatorio")
     private Integer intervaloMeses;
+
+    /**
+     * Opcional: al dar de alta en el libro por placa, enlaza esta fila al id de {@code MaintenancePlanActivity}
+     * del plan MMY (mismo resolved template). Si no viene, línea sólo-manual sin vínculo a catálogo.
+     */
+    private Long cloneFromPlanActivityId;
 }

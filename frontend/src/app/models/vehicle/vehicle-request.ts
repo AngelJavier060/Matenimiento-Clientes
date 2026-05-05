@@ -11,4 +11,9 @@ export interface VehicleRequest {
   imageUrl?: string;
   clientId?: number;
   notes?: string;
+  /** Plan MP fijo; omitir o null = automático por MMY */
+  maintenancePlanId?: number | null;
+  nextCommittedServiceMileage?: number | null;
+  /** ISO yyyy-mm-dd */
+  nextCommittedServiceDate?: string | null;
 }

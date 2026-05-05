@@ -43,6 +43,18 @@
           <input type="text" [(ngModel)]="formData.color" name="color" placeholder="Rojo">
         </div>
       </div>
+
+      <div class="form-group form-group--full">
+        <label>Plan de mantenimiento preventivo (opcional)</label>
+        <p class="form-hint">
+          <strong>Automático:</strong> el sistema empareja por marca, modelo y año con los planes que cargaste en Preventivo.
+          Elegí un plan fijo si esta unidad debe usar siempre otro libro (motor distinto, versión, etc.).
+        </p>
+        <select [(ngModel)]="formData.maintenancePlanId" name="maintenancePlanId">
+          <option [ngValue]="null">Automático por marca / modelo / año</option>
+          <option *ngFor="let p of maintenancePlans" [ngValue]="p.id">{{ p.label }}</option>
+        </select>
+      </div>
     </div>
 
     <div class="form-card">
@@ -50,8 +62,30 @@
       <div class="form-row">
         <div class="form-group">
           <label>Kilometraje</label>
-          <input type="number" [(ngModel)]="formData.mileage" name="mileage" placeholder="0">
+          <input type="number" [(ngModel)]="formData.mileage" name="mileage" placeholder="0" min="0">
         </div>
+        <div class="form-group">
+          <label>Próximo servicio pactado · km objetivo</label>
+          <p class="form-hint form-hint--inline">
+            Un solo valor por unidad para acordado con cliente (opcional); lo usamos en alertas Preventivo junto al plan por líneas.
+          </p>
+          <input
+            type="number"
+            [(ngModel)]="formData.nextCommittedServiceMileage"
+            name="nextCommittedServiceMileage"
+            placeholder="Ej. 205000"
+            min="0"
+          >
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Próximo servicio pactado · fecha objetivo</label>
+          <input type="date" [(ngModel)]="formData.nextCommittedServiceDate" name="nextCommittedServiceDate">
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>Tipo de Combustible</label>
           <select [(ngModel)]="formData.fuelType" name="fuelType">
@@ -59,6 +93,7 @@
             <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
           </select>
         </div>
+        <div class="form-group"></div>
       </div>
       <div class="form-row">
         <div class="form-group">

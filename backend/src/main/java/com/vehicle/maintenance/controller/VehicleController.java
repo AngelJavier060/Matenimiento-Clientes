@@ -1,7 +1,10 @@
 package com.vehicle.maintenance.controller;
 
+import com.vehicle.maintenance.dto.maintenance_plan.MaintenancePlanActivityRequest;
+import com.vehicle.maintenance.dto.maintenance_plan.MaintenancePlanActivityResponse;
 import com.vehicle.maintenance.dto.vehicle.VehicleRequest;
 import com.vehicle.maintenance.dto.vehicle.VehicleResponse;
+import com.vehicle.maintenance.service.MaintenancePlanService;
 import com.vehicle.maintenance.service.VehicleService;
 import com.vehicle.maintenance.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +26,7 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final MaintenancePlanService maintenancePlanService;
 
     @GetMapping
     @Operation(summary = "Obtener todos los vehículos")
@@ -67,6 +71,41 @@ public class VehicleController {
     @Operation(summary = "Eliminar vehículo (soft delete)")
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
         vehicleService.deleteVehicle(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{vehicleId}/preventive-activities/incorporate-from-template")
+    @Operation(summary = "Copiar a esta placa las actividades de la plantilla MMY que falten (no modifica la plantilla)")
+    public ResponseEntity<Void> incorporatePreventiveFromTemplate(@PathVariable Long vehicleId) {
+        maintenancePlanService.incorporateTemplateActivitiesForVehicle(vehicleId, SecurityUtils.getCurrentUserId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{vehicleId}/preventive-activities")
+    @Operation(summary = "Agregar actividad preventiva sólo para esta unidad")
+    public ResponseEntity<MaintenancePlanActivityResponse> addVehiclePreventiveActivity(
+            @PathVariable Long vehicleId,
+            @Valid @RequestBody MaintenancePlanActivityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(maintenancePlanService.addVehiclePreventiveActivity(
+                vehicleId, request, SecurityUtils.getCurrentUserId()));
+    }
+
+    @PutMapping("/{vehicleId}/preventive-activities/{activityId}")
+    @Operation(summary = "Actualizar actividad preventiva esta unidad")
+    public ResponseEntity<MaintenancePlanActivityResponse> updateVehiclePreventiveActivity(
+            @PathVariable Long vehicleId,
+            @PathVariable Long activityId,
+            @Valid @RequestBody MaintenancePlanActivityRequest request) {
+        return ResponseEntity.ok(maintenancePlanService.updateVehiclePreventiveActivity(
+                vehicleId, activityId, request, SecurityUtils.getCurrentUserId()));
+    }
+
+    @DeleteMapping("/{vehicleId}/preventive-activities/{activityId}")
+    @Operation(summary = "Eliminar actividad preventiva de esta unidad (no borra la plantilla MMY)")
+    public ResponseEntity<Void> deleteVehiclePreventiveActivity(
+            @PathVariable Long vehicleId,
+            @PathVariable Long activityId) {
+        maintenancePlanService.deleteVehiclePreventiveActivity(vehicleId, activityId, SecurityUtils.getCurrentUserId());
         return ResponseEntity.noContent().build();
     }
 }

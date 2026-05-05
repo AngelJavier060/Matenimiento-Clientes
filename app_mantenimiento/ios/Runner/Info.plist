@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Permite tomar la foto del vehículo desde la app.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Permite elegir una foto del vehículo desde la galería.</string>
 </dict>
 </plist>

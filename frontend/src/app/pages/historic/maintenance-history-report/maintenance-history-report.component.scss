@@ -1,0 +1,524 @@
+/* Diseño inspirado en el informe proporcionado; estilos propios para PDF / pantalla */
+
+.mhr {
+  width: 100%;
+  max-width: 1000px;
+  min-height: 1414px;
+  margin: 0 auto;
+  padding: 3rem;
+  background: #fff;
+  border: 1px solid #c4c5d5;
+  box-sizing: border-box;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #191c1e;
+}
+
+.mhr__text-primary {
+  color: #00288e;
+}
+.mhr__text-tertiary {
+  color: #273545;
+}
+.mhr__text-muted {
+  color: #757684;
+}
+.mhr__text-body {
+  color: #191c1e;
+}
+
+.mhr__h1 {
+  margin: 0 0 0.35rem;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.mhr__h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.mhr__h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.mhr__label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.mhr__lead {
+  margin: 0.5rem 0 0;
+  max-width: 18rem;
+  font-size: 13px;
+  color: #444653;
+}
+
+.mhr__mt-sm {
+  margin-top: 0.35rem;
+}
+
+.mhr__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 3px solid #1e40af;
+}
+
+.mhr__header-right {
+  text-align: right;
+}
+
+.mhr__brand-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.mhr__brand-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  background: #1e40af;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.mhr__ico-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+  font-size: 22px;
+  vertical-align: middle;
+}
+
+.mhr__section {
+  margin-bottom: 2.5rem;
+}
+
+.mhr__grow {
+  flex-grow: 1;
+}
+
+.mhr__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+
+  .material-symbols-outlined {
+    font-size: 22px;
+  }
+}
+
+.mhr__summary-band {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid #c4c5d5;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mhr__vehicle-photo {
+  flex: 0 0 168px;
+  width: 168px;
+  min-height: 120px;
+  background: #eceef0;
+  border-right: 1px solid #c4c5d5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mhr__vehicle-photo-img {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.mhr__vehicle-photo-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  color: #757684;
+
+  .material-symbols-outlined {
+    font-size: 40px !important;
+    opacity: 0.5;
+  }
+}
+
+.mhr__vehicle-photo-ph-txt {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mhr__grid-summary {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .mhr__summary-band {
+    flex-direction: column;
+  }
+
+  .mhr__vehicle-photo {
+    flex: none;
+    width: 100%;
+    min-height: 140px;
+    border-right: none;
+    border-bottom: 1px solid #c4c5d5;
+  }
+
+  .mhr__grid-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mhr__cell {
+  padding: 1rem;
+  background: #fff;
+  border-right: 1px solid #c4c5d5;
+  border-bottom: 1px solid #c4c5d5;
+}
+
+.mhr__cell--last {
+  border-right: none;
+}
+
+.mhr__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mhr__pill--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.mhr__pill--off {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.mhr__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.mhr__table-wrap {
+  overflow: hidden;
+  border: 1px solid #c4c5d5;
+  border-radius: 8px;
+}
+
+.mhr__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead tr {
+    background: #1e40af;
+    color: #fff;
+  }
+
+  th {
+    padding: 0.85rem 1rem;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  th:last-child {
+    border-right: none;
+  }
+
+  tbody tr {
+    border-top: 1px solid #c4c5d5;
+    background: #fff;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f2f4f6;
+  }
+
+  td {
+    padding: 0.85rem 1rem;
+    vertical-align: top;
+  }
+}
+
+.mhr__th-num,
+.mhr__td-num {
+  text-align: right;
+}
+
+.mhr__td-num {
+  font-weight: 700;
+}
+
+.mhr__td-strong {
+  font-weight: 600;
+}
+
+.mhr__mono {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.mhr__badge {
+  display: inline-block;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mhr__badge--prev {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.mhr__badge--corr {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.mhr__ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.mhr__ul li {
+  margin: 0.15rem 0;
+}
+
+.mhr__empty {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 2rem !important;
+}
+
+.mhr__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 800px) {
+  .mhr__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mhr__card {
+  padding: 1rem;
+  background: #eceef0;
+  border-radius: 0 8px 8px 0;
+  border-left: 4px solid #00288e;
+}
+
+.mhr__card--b {
+  border-left-color: #0060ac;
+}
+
+.mhr__card--c {
+  border-left-color: #273545;
+}
+
+.mhr__upper {
+  text-transform: uppercase;
+}
+
+.mhr__card-date {
+  margin: 0.35rem 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #273545;
+}
+
+.mhr__card-km {
+  margin: 0.2rem 0 0;
+  font-size: 11px;
+  color: #444653;
+}
+
+.mhr__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid #c4c5d5;
+}
+
+@media (max-width: 800px) {
+  .mhr__footer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mhr__total-box {
+  padding: 1.35rem;
+  border-radius: 12px;
+  background: #d5e4f8;
+}
+
+.mhr__text-on-tint {
+  color: #3a4858;
+}
+
+.mhr__text-on-tint-dim {
+  color: #3a4858;
+  opacity: 0.85;
+}
+
+.mhr__total-num {
+  margin: 0.35rem 0 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #0e1d2b;
+}
+
+.mhr__tiny {
+  margin: 0.35rem 0 0;
+  font-size: 10px;
+}
+
+.mhr__footer-right {
+  position: relative;
+}
+
+.mhr__next-wrap {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem;
+  border: 2px dashed #1e40af;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mhr__next-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+
+  .material-symbols-outlined {
+    font-size: 20px;
+  }
+}
+
+.mhr__upper-bold {
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+}
+
+.mhr__next-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #e0e3e5;
+  font-size: 12px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.mhr__next-label {
+  font-weight: 600;
+  color: #273545;
+}
+
+.mhr__next-km {
+  font-weight: 700;
+  color: #00288e;
+  white-space: nowrap;
+}
+
+.mhr__water {
+  position: absolute;
+  right: -1.75rem;
+  bottom: -1.75rem;
+  font-size: 110px !important;
+  color: #00288e;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.mhr__legal {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eceef0;
+}
+
+.mhr__legal-text {
+  font-size: 9px;
+  line-height: 1.35;
+  color: #757684;
+
+  p {
+    margin: 0 0 0.25rem;
+  }
+}
+
+.mhr__signatures {
+  display: flex;
+  gap: 1.75rem;
+}
+
+.mhr__sign {
+  width: 7rem;
+  text-align: center;
+}
+
+.mhr__sign-line {
+  height: 2px;
+  background: #757684;
+  margin-bottom: 0.35rem;
+}

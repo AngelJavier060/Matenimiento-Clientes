@@ -49,14 +49,14 @@ public class ReminderController {
     }
 
     @PostMapping
-    @Operation(summary = "Crear nuevo recordatorio")
+    @Operation(summary = "Crear recordatorio (deshabilitado: solo automáticos desde mantenimiento)")
     public ResponseEntity<ReminderResponse> createReminder(@Valid @RequestBody ReminderRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(reminderService.createReminder(request, SecurityUtils.getCurrentUserId()));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar recordatorio")
+    @Operation(summary = "Actualizar recordatorio (deshabilitado: edite el mantenimiento / próximo servicio)")
     public ResponseEntity<ReminderResponse> updateReminder(
             @PathVariable Long id,
             @Valid @RequestBody ReminderRequest request) {

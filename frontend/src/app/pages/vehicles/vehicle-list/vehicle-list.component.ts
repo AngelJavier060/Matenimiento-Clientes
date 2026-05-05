@@ -7,6 +7,8 @@ import { VehicleResponse } from '../../../models/vehicle/vehicle-response';
 
 type FleetFuelFilter = '' | NonNullable<VehicleResponse['fuelType']>;
 type FleetStateFilter = '' | 'OPERATIVO' | 'MANTENIMIENTO' | 'INACTIVO';
+/** Preventivo: emparejamiento MMY vs plan asignado en ficha */
+type PreventiveMpFilter = '' | 'AUTO' | 'FIXED';
 
 @Component({
   selector: 'app-vehicle-list',
@@ -21,6 +23,7 @@ export class VehicleListComponent implements OnInit {
   filterBrand = '';
   filterFleetState: FleetStateFilter = '';
   filterFuel: FleetFuelFilter = '';
+  filterPreventiveMp: PreventiveMpFilter = '';
 
   readonly defaultAvatarUrl =
     'https://lh3.googleusercontent.com/aida/ADBb0ujt5ZBz6Ft-x2I73c9KM4VRXEEGtQMMoCWqFLtrJIFJpZp7MqQVRAh7znFVkmrDv474XUdyEV9zo0z4HH71EYLo1jZmAg40EorsSTfCkHCkiWD_yR8xopEMisHwTVyxaENyBd9Fyo30xSpU0GHtsBmPFWZ9r2NdwnHw98N8YcNFwPUhQMXO8Dpwb6Giv3BMvHDlBcKJtcWHIcnk8wF1bxCJwgVSOMpoDDy_Ko4c36TC5a948Gq4hc86a-T1mox4OMFtuEp_rRI';
@@ -87,6 +90,21 @@ export class VehicleListComponent implements OnInit {
     return new Set(this.vehicles.map((v) => v.brand).filter(Boolean)).size;
   }
 
+  get kpiPlanMpFijo(): number {
+    return this.vehicles.filter((v) => this.preventiveUsesFixedPlan(v)).length;
+  }
+
+  /** Helper para mensajes vacíos / consistencia */
+  get hasAnyListFilter(): boolean {
+    return Boolean(
+      this.searchTerm?.trim() ||
+        this.filterBrand ||
+        this.filterFuel ||
+        this.filterFleetState ||
+        this.filterPreventiveMp
+    );
+  }
+
   loadVehicles() {
     this.loading = true;
     this.vehicleService.getVehicles().subscribe({
@@ -127,6 +145,62 @@ export class VehicleListComponent implements OnInit {
       return 'vl-badge vl-badge--warn';
     }
     return 'vl-badge vl-badge--off';
+  }
+
+  /** Plan preventivo cargado desde UI: FK fijo o emparejamiento automático MMY */
+  preventiveUsesFixedPlan(v: VehicleResponse): boolean {
+    return v.maintenancePlanId != null;
+  }
+
+  preventiveMpBadgeClass(v: VehicleResponse): string {
+    return this.preventiveUsesFixedPlan(v)
+      ? 'vl-mp-badge vl-mp-badge--fixed'
+      : 'vl-mp-badge vl-mp-badge--auto';
+  }
+
+  preventiveMpBadgeLabel(v: VehicleResponse): string {
+    return this.preventiveUsesFixedPlan(v) ? 'Plan MP fijo' : 'MP automático (MMY)';
+  }
+
+  preventiveMpBadgeDetail(v: VehicleResponse): string {
+    return this.preventiveUsesFixedPlan(v)
+      ? `Plan #${v.maintenancePlanId}`
+      : 'Por marca / modelo / año';
+  }
+
+  preventiveMpBadgeTitle(v: VehicleResponse): string {
+    const line = this.preventiveMpBadgeDetail(v);
+    const mode = this.preventiveUsesFixedPlan(v)
+      ? 'Este vehículo usa siempre el plan seleccionado en su ficha.'
+      : 'El preventivo se resuelve igualando marca, modelo y año con tus planes cargados.';
+    return `${this.preventiveMpBadgeLabel(v)} — ${line}. ${mode}`;
+  }
+
+  /**
+   * Resumen inferior: vehículos con `maintenancePlanId` (plan fijo persistido).
+   * Se actualiza cada vez que se recarga el listado tras guardar/editar.
+   */
+  get vehiclesWithFixedPreventivePlans(): VehicleResponse[] {
+    return this.vehicles
+      .filter((v) => this.preventiveUsesFixedPlan(v))
+      .slice()
+      .sort((a, b) => {
+        const byPlate = (a.licensePlate || '—').localeCompare(b.licensePlate || '—', 'es', {
+          sensitivity: 'base'
+        });
+        if (byPlate !== 0) {
+          return byPlate;
+        }
+        return `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`, 'es');
+      });
+  }
+
+  /** Abrir módulo preventivo ya filtrado por vehículo. */
+  preventivePlanner(vehicleId: number, event?: Event): void {
+    event?.stopPropagation?.();
+    void this.router.navigate(['/maintenance'], {
+      queryParams: { categoria: 'preventivo', vehicleId }
+    });
   }
 
   cardImage(i: number): string {
@@ -183,8 +257,13 @@ export class VehicleListComponent implements OnInit {
       const matchFuel = !this.filterFuel || v.fuelType === this.filterFuel;
       const k = this.fleetStateKey(v);
       const matchState = !this.filterFleetState || k === this.filterFleetState;
+      const fixed = this.preventiveUsesFixedPlan(v);
+      const matchMp =
+        !this.filterPreventiveMp ||
+        (this.filterPreventiveMp === 'FIXED' && fixed) ||
+        (this.filterPreventiveMp === 'AUTO' && !fixed);
 
-      return matchSearch && matchBrand && matchFuel && matchState;
+      return matchSearch && matchBrand && matchFuel && matchState && matchMp;
     });
   }
 

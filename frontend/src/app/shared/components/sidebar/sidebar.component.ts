@@ -51,6 +51,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   ];
 
+  /** Ítem aparte debajo del bloque Mantenimientos (no es submenu). */
+  readonly historicLink: SidebarNavLink = {
+    path: '/historico',
+    icon: 'history',
+    label: 'Histórico'
+  };
+
   readonly remindersLink: SidebarNavLink = {
     path: '/reminders',
     icon: 'notifications',

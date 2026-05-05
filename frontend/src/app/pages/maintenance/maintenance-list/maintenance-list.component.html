@@ -1,12 +1,331 @@
 <app-navbar [title]="pageTitle">
-  <button class="btn-icon" (click)="selectedVehicleId && onVehicleChange(selectedVehicleId)" title="Actualizar">
+  <button class="btn-icon" (click)="refrescarNavbar()" title="Actualizar">
     <span class="material-icons-round">refresh</span>
   </button>
 </app-navbar>
 
 <div class="page-content">
-  <!-- MÓDULO MP: se muestra cuando categoria=preventivo -->
-  <app-mp-plan *ngIf="filterCategoria === 'preventivo'"></app-mp-plan>
+  <!-- MÓDULO MP: mismo vehículo que en URL / barra inferior -->
+  <ng-container *ngIf="filterCategoria === 'preventivo'">
+    <div class="filters-bar filters-bar--mp-top">
+      <span class="mcat-chip">Preventivo</span>
+      <div class="vehicle-select-wrapper">
+        <span class="material-icons-round">directions_car</span>
+        <select [(ngModel)]="selectedVehicleId" (change)="onVehicleChange(selectedVehicleId)">
+          <option [ngValue]="null">Seleccionar vehículo</option>
+          <option *ngFor="let v of vehicles" [ngValue]="v.id">{{ v.brand }} {{ v.model }} — {{ v.licensePlate }}</option>
+        </select>
+      </div>
+      <button class="btn-primary" type="button" (click)="newMaintenance()" [disabled]="!selectedVehicleId">
+        <span class="material-icons-round">add</span>
+        Nuevo mantenimiento
+      </button>
+    </div>
+
+    <app-mp-plan
+      *ngIf="libroModalVehicleId === null"
+      [vehicleId]="selectedVehicleId"
+      (planLinkageChanged)="onPlanLinkageChangedFromChild()"
+    ></app-mp-plan>
+
+    <section
+      class="mp-plan-linkage glass-panel-soft"
+      aria-label="Planes preventivos guardados sólo por placa vinculada"
+    >
+      <h3 class="mp-plan-linkage__page-title">Placas con plan vinculado (guardado en base de datos)</h3>
+      <p class="mp-plan-linkage__roster-hint">
+        Aquí aparecen <strong>sólo las unidades</strong> donde guardaste plan fijo
+        (<strong>Vincular plan a esta placa</strong>, o el campo de plan en la ficha del vehículo). Cada vínculo nuevo se suma abajo; las que
+        siguen sólo con emparejo automático MMY <strong>no</strong> se listan aquí.
+      </p>
+
+      <div *ngIf="loadingFleetVinculos" class="loading-state loading-state--inline">
+        <div class="spinner-lg"></div>
+        <span>Cargando placas vinculadas…</span>
+      </div>
+
+      <div *ngIf="!loadingFleetVinculos && vehiclesPlacasVinculadas.length === 0" class="mp-plan-linkage__empty-roster">
+        <p>
+          Todavía no hay ninguna placa con plan guardado en ficha. Elegí un vehículo arriba, resolvé el plan y usá
+          <strong>Vincular plan a esta placa</strong> en el módulo preventivo; al guardar, la placa aparecerá en este listado.
+        </p>
+      </div>
+
+      <div class="mp-vinculos-stack" *ngIf="!loadingFleetVinculos && vehiclesPlacasVinculadas.length > 0">
+        <div class="mp-fleet-acc" *ngFor="let vv of vehiclesPlacasVinculadas; trackBy: trackByVehicleId">
+          <ng-container *ngIf="linkageFor(vv) as lg">
+            <button
+              type="button"
+              class="mp-fleet-acc__summ"
+              [attr.aria-expanded]="isFleetRowOpen(vv.id)"
+              [class.mp-fleet-acc__summ--open]="isFleetRowOpen(vv.id)"
+              (click)="toggleFleetRowAccordion(vv.id)"
+            >
+              <div class="mp-fleet-acc__thumb" aria-hidden="true">
+                <span class="material-icons-round">directions_car</span>
+              </div>
+              <div class="mp-fleet-acc__cols">
+                <div class="mp-fleet-acc__cell mp-fleet-acc__cell--brand">
+                  <span class="mp-fleet-acc__lbl">Placa y marca</span>
+                  <span class="mp-fleet-acc__plate">{{ linkagePlateDisplay(lg, vv) }}</span>
+                  <span class="mp-fleet-acc__brand-line">{{ lg.vehicleBrand }} {{ lg.vehicleModel }}</span>
+                  <span class="mp-fleet-acc__year-chip" *ngIf="lg.vehicleYear != null">Año {{ lg.vehicleYear }}</span>
+                </div>
+                <div class="mp-fleet-acc__cell">
+                  <span class="mp-fleet-acc__lbl">Kilometraje actual</span>
+                  <div class="mp-fleet-acc__km-line">
+                    <span class="mp-fleet-acc__km-val">{{ linkageKmSummaryDisplay(lg) }}</span>
+                    <span class="mp-fleet-acc__km-unit">KM</span>
+                  </div>
+                  <div class="mp-fleet-acc__track">
+                    <div
+                      class="mp-fleet-acc__fill mp-fleet-acc__fill--{{ linkageKmBarTone(lg) }}"
+                      [style.width.%]="linkageKmProgressPercent(lg)"
+                    ></div>
+                  </div>
+                </div>
+                <div class="mp-fleet-acc__cell mp-fleet-acc__cell--srv">
+                  <span class="mp-fleet-acc__lbl">&Uacute;ltimo mantenimiento</span>
+                  <span class="mp-fleet-acc__srv-date">{{ linkageLastServiceFriendly(lg) }}</span>
+                  <span
+                    class="mp-fleet-acc__srv-sub"
+                    [class.mp-fleet-acc__srv-sub--warn]="linkageFleetStatusBadge(lg) === 'atencion'"
+                    >{{ linkageDaysSinceLastServiceLabel(lg) }}</span
+                  >
+                </div>
+                <div class="mp-fleet-acc__tail">
+                  <span class="mp-fleet-acc__pill mp-fleet-acc__pill--{{ linkageFleetStatusBadge(lg) }}">{{ linkageFleetStatusLabel(lg) }}</span>
+                  <span class="material-icons-round mp-fleet-acc__chev" aria-hidden="true">expand_more</span>
+                </div>
+              </div>
+            </button>
+
+            <div class="mp-fleet-acc__expand" *ngIf="isFleetRowOpen(vv.id)">
+              <div class="mp-plan-linkage__cta-row" *ngIf="(lg.matchMode || '').toUpperCase() !== 'NONE'">
+                <button
+                  type="button"
+                  class="mp-plan-linkage__btn-editar"
+                  (click)="abrirLibroModalPlaca(vv.id)"
+                  title="Editar libro de actividades sólo para esta placa"
+                >
+                  <span class="material-icons-round" aria-hidden="true">edit</span>
+                  <span>Editar</span>
+                </button>
+                <label class="mp-plan-linkage__add-label">
+                  <span class="mp-plan-linkage__add-span">Agregar</span>
+                  <select
+                    #addTplSelect
+                    class="mp-plan-linkage__add-select"
+                    title="Sumar una línea del MMY (plantilla) sólo para esta placa"
+                    aria-label="Agregar línea desde plantilla MMY no incorporada"
+                    [disabled]="loadingFleetVinculos || pendientesPlantillaParaPlaca(lg).length === 0"
+                    (change)="onAgregarDesdePlantillaSelect(vv.id, lg, addTplSelect.value, addTplSelect)"
+                  >
+                    <option value="">
+                      {{
+                        pendientesPlantillaParaPlaca(lg).length
+                          ? 'Elige línea pendiente desde MMY…'
+                          : '(sin líneas pendientes)'
+                      }}
+                    </option>
+                    <option *ngFor="let p of pendientesPlantillaParaPlaca(lg)" [value]="p.id.toString()">
+                      {{ p.nombre }} · {{ p.intervaloKm | number }} km / {{ p.intervaloMeses }} mes
+                    </option>
+                  </select>
+                </label>
+              </div>
+
+              <div *ngIf="linkagePlanSubtitle(lg)" class="mp-plan-linkage__planbox mp-plan-linkage__planbox--accordion">
+                <button
+                  type="button"
+                  class="mp-plan-linkage__acc-trigger"
+                  [attr.aria-expanded]="isFleetInnerPlanOpen(vv.id)"
+                  [attr.aria-controls]="'linkage-plan-acts-' + vv.id"
+                  [class.mp-plan-linkage__acc-trigger--open]="isFleetInnerPlanOpen(vv.id)"
+                  (click)="toggleFleetInnerPlan(vv.id)"
+                >
+                  <div class="mp-plan-linkage__acc-trigger-text">
+                    <span class="mp-plan-linkage__acc-kicker">Plan aplicado</span>
+                    <span
+                      class="mp-plan-linkage__acc-one-line"
+                      [title]="linkagePlanSubtitle(lg) + ' · ' + linkagePlanActivities(lg).length + ' actividades'"
+                      >{{ linkagePlanSubtitle(lg) }}</span
+                    >
+                    <span class="mp-plan-linkage__acc-metrics"
+                      ><strong>{{ linkagePlanActivities(lg).length }}</strong> actividad{{
+                        linkagePlanActivities(lg).length !== 1 ? 'es' : ''
+                      }}
+                      &middot; puls&aacute; para detalle</span
+                    >
+                  </div>
+                  <span class="material-icons-round mp-plan-linkage__acc-chevron" aria-hidden="true">expand_more</span>
+                </button>
+
+                <div
+                  [id]="'linkage-plan-acts-' + vv.id"
+                  class="mp-plan-linkage__acc-panel"
+                  *ngIf="isFleetInnerPlanOpen(vv.id)"
+                  role="region"
+                  aria-label="Detalle del plan"
+                >
+                  <ng-container *ngIf="fleetVehicleCommitmentAlerts(lg) as commitChips">
+                    <div *ngIf="commitChips.length" class="mp-plan-linkage__vehicle-commit">
+                      <span class="mp-plan-linkage__vehicle-commit-kicker">Compromiso por unidad</span>
+                      <div class="mp-plan-linkage__vehicle-commit-wrap">
+                        <span
+                          *ngFor="let chip of commitChips"
+                          class="mp-plan-linkage__act-alert mp-plan-linkage__act-alert--{{ chip.tone }}"
+                          >{{ chip.text }}</span
+                        >
+                      </div>
+                    </div>
+                  </ng-container>
+                  <ul *ngIf="linkagePlanActivities(lg).length" class="mp-plan-linkage__acts-compact">
+                    <li *ngFor="let row of fleetPlanActivitiesWithAlerts(lg)" class="mp-plan-linkage__acts-compact-row">
+                      <div class="mp-plan-linkage__acts-compact-main">
+                        <span class="mp-plan-linkage__acts-compact-name">{{ row.act.nombre }}</span>
+                        <div *ngIf="row.alerts.length" class="mp-plan-linkage__acts-compact-alerts">
+                          <span
+                            *ngFor="let chip of row.alerts"
+                            class="mp-plan-linkage__act-alert mp-plan-linkage__act-alert--{{ chip.tone }}"
+                            >{{ chip.text }}</span
+                          >
+                        </div>
+                      </div>
+                      <span class="mp-plan-linkage__acts-compact-interval"
+                        >{{ row.act.intervaloKm | number }} km / {{ row.act.intervaloMeses }} mes</span
+                      >
+                    </li>
+                  </ul>
+                  <p *ngIf="!linkagePlanActivities(lg).length" class="mp-plan-linkage__acc-empty">Sin l&iacute;neas para mostrar.</p>
+                </div>
+              </div>
+
+              <p *ngIf="!lg.plan && (lg.matchMode || '').toUpperCase() === 'NONE'" class="mp-plan-linkage__muted">
+                No hay plan enlazado para este MMY. Corregí la plantilla o usá <strong>Vincular plan</strong>.
+              </p>
+            </div>
+          </ng-container>
+
+          <div *ngIf="linkageFor(vv) === null" class="mp-plan-linkage__muted mp-plan-linkage__row-fail">
+            No se pudo cargar el plan para <strong>{{ vv.licensePlate || 'esta placa' }}</strong>. Reintentá con el botón actualizar.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      *ngIf="selectedVehicleId"
+      class="mp-unit-history glass-panel-soft"
+      aria-label="Servicios registrados para el vehículo seleccionado"
+    >
+      <header class="mp-unit-history__head">
+        <h3 class="mp-unit-history__title">Servicios ligados a esta unidad</h3>
+        <p class="mp-unit-history__vehicle">{{ selectedVehicleLabel }}</p>
+        <p class="mp-unit-history__hint">
+          Esto muestra cada <strong>visita ejecutada ya guardada</strong> como mantenimiento (tabla principal de servicios por
+          vehículo). <strong>No</strong> es el libro de planes: ese queda más arriba en el apartado «Placas con plan vinculado» cuando la unidad tiene plan guardado en ficha.
+          <strong>Registrar visita ejecutada</strong> o <strong>Nuevo mantenimiento</strong> te abren el formulario donde al
+          grabar sí se crea el registro y aparecerá aquí con categoría Preventivo o Mixta.
+        </p>
+      </header>
+
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner-lg"></div>
+      </div>
+
+      <div *ngIf="!loading && displayedMaintenances.length > 0" class="maintenance-list maintenance-list--mp">
+        <div class="maintenance-card" *ngFor="let m of displayedMaintenances">
+          <div class="maint-header">
+            <span *ngIf="categoryLabel(m.serviceCategory)" class="mcat-chip mcat-chip--soft">{{ categoryLabel(m.serviceCategory) }}</span>
+            <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
+            <span class="maint-date">{{ m.serviceDate || '-' }}</span>
+            <div class="maint-actions">
+              <button
+                type="button"
+                class="btn-edit"
+                (click)="abrirEdicionMantenimiento(m)"
+                title="Ver o editar"
+              >
+                <span class="material-icons-round">edit</span>
+              </button>
+              <button class="btn-delete" (click)="deleteMaintenance(m.id)" title="Eliminar">
+                <span class="material-icons-round">delete</span>
+              </button>
+            </div>
+          </div>
+          <h4>{{ m.serviceType }}</h4>
+          <p *ngIf="m.description">{{ m.description }}</p>
+          <div class="maint-meta">
+            <span *ngIf="mileageLabel(m) as lbl">
+              <span class="material-icons-round">speed</span>{{ lbl }}
+            </span>
+            <span *ngIf="m.cost != null"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
+            <span *ngIf="m.workshopName"><span class="material-icons-round">store</span>{{ m.workshopName }}</span>
+          </div>
+          <div class="maint-next" *ngIf="m.nextServiceMileage || m.nextServiceDate">
+            <span class="material-icons-round">schedule</span>
+            Próximo: {{ m.nextServiceMileage ? m.nextServiceMileage + ' km' : '' }}
+            {{ m.nextServiceMileage && m.nextServiceDate ? '·' : '' }}
+            {{ m.nextServiceDate || '' }}
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && maintenances.length > 0 && displayedMaintenances.length === 0" class="empty-state empty-state--compact">
+        <span class="material-icons-round empty-icon">filter_alt_off</span>
+        <h3>Sin registros preventivos aquí</h3>
+        <p>
+          Este vehículo tiene mantenimientos, pero ninguno marcado solo como Preventivo o Mixto para esta vista. Al crear desde
+          <strong>Nuevo mantenimiento</strong>, usa categoría Preventivo (o Mixto) para que aparezcan en esta lista.
+        </p>
+      </div>
+
+      <div *ngIf="!loading && maintenances.length === 0" class="empty-state empty-state--compact">
+        <span class="material-icons-round empty-icon">build</span>
+        <h3>Aún no hay servicios en el historial</h3>
+        <p>Las visitas registradas contra esta unidad aparecerán acá cuando las guardes desde Nuevo mantenimiento.</p>
+        <button class="btn-primary" type="button" (click)="newMaintenance()">
+          <span class="material-icons-round">add</span>
+          Registrar servicio para esta unidad
+        </button>
+      </div>
+    </section>
+
+    <div
+      *ngIf="libroModalVehicleId !== null"
+      class="mp-libro-modal"
+      role="presentation"
+      (click)="cerrarLibroModalPlaca()"
+    >
+      <div
+        class="mp-libro-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="'mp-libro-modal-title'"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="mp-libro-modal__head">
+          <h3 id="mp-libro-modal-title" class="mp-libro-modal__title">Editar</h3>
+          <button
+            type="button"
+            class="mp-libro-modal__close"
+            (click)="cerrarLibroModalPlaca()"
+            title="Cerrar"
+          >
+            <span class="material-icons-round">close</span>
+          </button>
+        </header>
+        <p class="mp-libro-modal__sub">{{ libroModalTitulo }}</p>
+        <div class="mp-libro-modal__body">
+          <app-mp-plan
+            [vehicleId]="libroModalVehicleId!"
+            (planLinkageChanged)="onPlanLinkageChangedLibroModal()"
+          ></app-mp-plan>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- Vista normal (correctivo o general) -->
   <ng-container *ngIf="filterCategoria !== 'preventivo'">
@@ -39,17 +358,30 @@
   <div *ngIf="selectedVehicleId && !loading && displayedMaintenances.length > 0" class="maintenance-list">
     <div class="maintenance-card" *ngFor="let m of displayedMaintenances">
       <div class="maint-header">
+        <span *ngIf="categoryLabel(m.serviceCategory)" class="mcat-chip mcat-chip--soft">{{ categoryLabel(m.serviceCategory) }}</span>
         <span class="status-tag {{ getStatusClass(m.status) }}">{{ getStatusLabel(m.status) }}</span>
         <span class="maint-date">{{ m.serviceDate || '-' }}</span>
-        <button class="btn-delete" (click)="deleteMaintenance(m.id)" title="Eliminar">
-          <span class="material-icons-round">delete</span>
-        </button>
+        <div class="maint-actions">
+          <button
+            type="button"
+            class="btn-edit"
+            (click)="abrirEdicionMantenimiento(m)"
+            title="Ver o editar"
+          >
+            <span class="material-icons-round">edit</span>
+          </button>
+          <button class="btn-delete" (click)="deleteMaintenance(m.id)" title="Eliminar">
+            <span class="material-icons-round">delete</span>
+          </button>
+        </div>
       </div>
       <h4>{{ m.serviceType }}</h4>
       <p *ngIf="m.description">{{ m.description }}</p>
       <div class="maint-meta">
-        <span *ngIf="m.mileageAtService"><span class="material-icons-round">speed</span>{{ m.mileageAtService }} km</span>
-        <span *ngIf="m.cost"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
+        <span *ngIf="mileageLabel(m) as lbl">
+          <span class="material-icons-round">speed</span>{{ lbl }}
+        </span>
+        <span *ngIf="m.cost != null"><span class="material-icons-round">attach_money</span>${{ m.cost.toFixed(2) }}</span>
         <span *ngIf="m.workshopName"><span class="material-icons-round">store</span>{{ m.workshopName }}</span>
       </div>
       <div class="maint-next" *ngIf="m.nextServiceMileage || m.nextServiceDate">

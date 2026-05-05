@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -33,4 +34,11 @@ public class VehicleResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private int maintenanceCount;
+
+    /** Plan preventivo fijo (si el taller lo asignó a esta unidad). */
+    private Long maintenancePlanId;
+
+    /** Acuerdo de próximo servicio para la unidad (opcional). */
+    private Integer nextCommittedServiceMileage;
+    private LocalDate nextCommittedServiceDate;
 }

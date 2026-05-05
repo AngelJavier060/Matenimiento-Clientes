@@ -79,6 +79,15 @@
         <span class="vl-kpi__lab">Marcas en flota</span>
       </div>
     </article>
+    <article class="vl-kpi">
+      <div class="vl-kpi__icon vl-kpi__icon--mpfijo">
+        <span class="material-symbols-outlined">bookmark</span>
+      </div>
+      <div class="vl-kpi__text">
+        <span class="vl-kpi__val">{{ kpiPlanMpFijo }}</span>
+        <span class="vl-kpi__lab">Plan MP fijo</span>
+      </div>
+    </article>
   </section>
 
   <section class="vl-filters">
@@ -108,6 +117,14 @@
         <option value="ELECTRIC">Eléctrico</option>
         <option value="LPG">GLP</option>
         <option value="CNG">GNC</option>
+      </select>
+    </div>
+    <div class="vl-filter-field">
+      <span class="vl-filter-label">Preventivo MP</span>
+      <select [(ngModel)]="filterPreventiveMp" class="vl-select">
+        <option value="">Todos</option>
+        <option value="AUTO">Automático (MMY)</option>
+        <option value="FIXED">Plan fijo en ficha</option>
       </select>
     </div>
     <button type="button" class="vl-btn-apply" (click)="applyFilters()">
@@ -141,6 +158,18 @@
               <p class="vl-plateyear">
                 Placa: {{ v.licensePlate || '—' }}<span *ngIf="v.year"> • {{ v.year }}</span>
               </p>
+              <div class="vl-mp-row">
+                <span
+                  class="material-symbols-outlined vl-mp-row__ico"
+                  [attr.title]="preventiveMpBadgeTitle(v)"
+                >
+                  {{ preventiveUsesFixedPlan(v) ? 'bookmark' : 'sync_alt' }}
+                </span>
+                <span [class]="preventiveMpBadgeClass(v)" [attr.title]="preventiveMpBadgeTitle(v)">
+                  <span class="vl-mp-badge__lab">{{ preventiveMpBadgeLabel(v) }}</span>
+                  <span class="vl-mp-badge__sub">{{ preventiveMpBadgeDetail(v) }}</span>
+                </span>
+              </div>
             </div>
             <div class="vl-card__head-right">
               <span [class]="fleetStateClass(v)">{{ fleetStateLabel(v) }}</span>
@@ -187,10 +216,52 @@
     </article>
   </section>
 
+  <section
+    *ngIf="!loading && vehicles.length > 0"
+    class="vl-mp-roster"
+    aria-labelledby="vl-mp-roster-title"
+  >
+    <header class="vl-mp-roster__head">
+      <h3 id="vl-mp-roster-title" class="vl-mp-roster__title">
+        <span class="material-symbols-outlined" aria-hidden="true">bookmark</span>
+        Placas con plan preventivo fijo
+      </h3>
+      <p class="vl-mp-roster__sub">
+        Cada fila es una <strong>placa distinta</strong> con plan fijo en base de datos: el listado reúne <strong>todas</strong> las que
+        tengáis así configuradas — vincular otra no debería quitarlas. Las que no están abajo siguen el preventivo automático MMY hasta que les
+        asignéis plantilla desde su ficha o desde Preventivo.
+      </p>
+    </header>
+
+    <div *ngIf="vehiclesWithFixedPreventivePlans.length === 0" class="vl-mp-roster__empty">
+      Todavía no hay placas con plan fijo en la flota actual. Abrí <strong>Editar</strong> desde una tarjeta y elegí
+      <strong>Plan de mantenimiento preventivo</strong> cuando el libro debe ser otro que el MMY por defecto.
+    </div>
+
+    <ul *ngIf="vehiclesWithFixedPreventivePlans.length > 0" class="vl-mp-roster__list">
+      <li *ngFor="let v of vehiclesWithFixedPreventivePlans" class="vl-mp-roster__row">
+        <div class="vl-mp-roster__main">
+          <span class="vl-mp-roster__plate">{{ v.licensePlate?.trim() || 'Sin placa' }}</span>
+          <span class="vl-mp-roster__vehicle">
+            {{ v.brand }} {{ v.model }}
+            <span class="vl-mp-roster__year" *ngIf="v.year"> · {{ v.year }}</span>
+          </span>
+        </div>
+        <span class="vl-mp-roster__planid">Plan #{{ v.maintenancePlanId }}</span>
+        <div class="vl-mp-roster__actions">
+          <button type="button" class="vl-mp-roster__btn" (click)="editVehicle(v.id, $event)">Editar</button>
+          <button type="button" class="vl-mp-roster__btn vl-mp-roster__btn--accent" (click)="preventivePlanner(v.id, $event)">
+            Preventivo
+          </button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
   <div *ngIf="!loading && filteredVehicles.length === 0" class="vl-empty">
     <span class="material-symbols-outlined vl-empty-icon">directions_car</span>
-    <h3 *ngIf="searchTerm || filterBrand || filterFuel || filterFleetState">Sin resultados con estos filtros</h3>
-    <h3 *ngIf="!searchTerm && !filterBrand && !filterFuel && !filterFleetState">No hay vehículos en el directorio</h3>
+    <h3 *ngIf="hasAnyListFilter">Sin resultados con estos filtros</h3>
+    <h3 *ngIf="!hasAnyListFilter">No hay vehículos en el directorio</h3>
     <p>Registra un vehículo desde el flujo de cliente o añade uno nuevo.</p>
     <button type="button" class="vl-btn-new vl-btn-new--solo" (click)="newVehicle()">
       <span class="material-symbols-outlined">add</span>

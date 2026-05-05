@@ -8,26 +8,26 @@ class MaintenanceService {
       int vehicleId) async {
     final data =
         await ApiService.get(ApiConfig.maintenancesByVehicle(vehicleId));
-    final list = data['content'] as List? ?? data as List? ?? [];
+    final list = ApiPayload.decodeList(data);
     return list.map((e) => MaintenanceResponse.fromJson(e)).toList();
   }
 
   Future<MaintenanceResponse> createMaintenance(
       MaintenanceRequest request) async {
-    final data = await ApiService.post(
-      ApiConfig.maintenances,
+    final raw = await ApiService.post(
+      ApiConfig.maintenance,
       body: request.toJson(),
     );
-    return MaintenanceResponse.fromJson(data);
+    return MaintenanceResponse.fromJson(ApiPayload.decodeMap(raw));
   }
 
   Future<MaintenanceResponse> updateMaintenance(
       int id, MaintenanceRequest request) async {
-    final data = await ApiService.put(
+    final raw = await ApiService.put(
       ApiConfig.maintenanceById(id),
       body: request.toJson(),
     );
-    return MaintenanceResponse.fromJson(data);
+    return MaintenanceResponse.fromJson(ApiPayload.decodeMap(raw));
   }
 
   Future<void> deleteMaintenance(int id) async {

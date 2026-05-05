@@ -1,0 +1,186 @@
+<article class="mhr">
+  <header class="mhr__header">
+    <div class="mhr__brand">
+      <div class="mhr__brand-row">
+        <span class="mhr__brand-ico">
+          <span class="material-symbols-outlined mhr__ico-fill">local_shipping</span>
+        </span>
+        <div>
+          <h2 class="mhr__h2 mhr__text-primary">{{ reportBrandTitle }}</h2>
+          <p class="mhr__label mhr__text-tertiary">Informe · histórico</p>
+        </div>
+      </div>
+      <p class="mhr__lead">Resumen de intervenciones registradas en el sistema.</p>
+    </div>
+    <div class="mhr__header-right">
+      <h1 class="mhr__h1 mhr__text-primary">Informe histórico de mantenimiento</h1>
+      <p class="mhr__label mhr__text-muted">ID: {{ reportId }}</p>
+      <p class="mhr__label mhr__text-body mhr__mt-sm">Generado: {{ generatedLabel }}</p>
+    </div>
+  </header>
+
+  <section class="mhr__section">
+    <div class="mhr__section-title">
+      <span class="material-symbols-outlined mhr__text-primary">info</span>
+      <h3 class="mhr__h3 mhr__text-tertiary">Resumen del vehículo</h3>
+    </div>
+    <div class="mhr__summary-band">
+      <div class="mhr__vehicle-photo" aria-hidden="true">
+        <img
+          *ngIf="vehicle.imageUrl"
+          class="mhr__vehicle-photo-img"
+          [src]="vehicle.imageUrl"
+          [attr.alt]="'Vehículo ' + (vehicle.licensePlate || vehicle.brand || '')"
+          loading="lazy"
+        />
+        <div *ngIf="!vehicle.imageUrl" class="mhr__vehicle-photo-ph">
+          <span class="material-symbols-outlined">directions_car</span>
+          <span class="mhr__vehicle-photo-ph-txt">Sin foto</span>
+        </div>
+      </div>
+      <div class="mhr__grid-summary">
+      <div class="mhr__cell">
+        <p class="mhr__label mhr__text-muted">Placa</p>
+        <p class="mhr__h3 mhr__text-tertiary">{{ vehicle.licensePlate || '—' }}</p>
+      </div>
+      <div class="mhr__cell">
+        <p class="mhr__label mhr__text-muted">Marca / modelo</p>
+        <p class="mhr__h3 mhr__text-tertiary">{{ vehicle.brand }} {{ vehicle.model }}</p>
+      </div>
+      <div class="mhr__cell">
+        <p class="mhr__label mhr__text-muted">Año</p>
+        <p class="mhr__h3 mhr__text-tertiary">{{ vehicle.year }}</p>
+      </div>
+      <div class="mhr__cell">
+        <p class="mhr__label mhr__text-muted">Kilometraje actual</p>
+        <p class="mhr__h3 mhr__text-tertiary">
+          {{ vehicle.mileage != null ? fmtKm(vehicle.mileage) : '—' }}
+        </p>
+      </div>
+      <div class="mhr__cell mhr__cell--last">
+        <p class="mhr__label mhr__text-muted">Estado general</p>
+        <span
+          class="mhr__pill"
+          [class.mhr__pill--ok]="overallStatus().ok"
+          [class.mhr__pill--off]="!overallStatus().ok"
+        >
+          <span class="mhr__dot"></span>
+          {{ overallStatus().label }}
+        </span>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mhr__section mhr__grow">
+    <div class="mhr__section-title">
+      <span class="material-symbols-outlined mhr__text-primary">history</span>
+      <h3 class="mhr__h3 mhr__text-tertiary">Registro de actividades</h3>
+    </div>
+    <div class="mhr__table-wrap">
+      <table class="mhr__table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Taller</th>
+            <th>Actividades</th>
+            <th class="mhr__th-num">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of sortedMaintenances">
+            <td class="mhr__mono">{{ formatDateIso(row.serviceDate) }}</td>
+            <td>
+              <span
+                class="mhr__badge"
+                [class.mhr__badge--prev]="isPreventive(row)"
+                [class.mhr__badge--corr]="!isPreventive(row)"
+              >
+                {{ serviceCategoryLabel(row) }}
+              </span>
+            </td>
+            <td class="mhr__td-strong">{{ row.workshopName || row.workshopAddress || '—' }}</td>
+            <td>
+              <ul class="mhr__ul">
+                <li *ngFor="let li of activitiesForMaintenance(row)">{{ li }}</li>
+              </ul>
+            </td>
+            <td class="mhr__td-num">${{ costLabel(row.cost) }}</td>
+          </tr>
+          <tr *ngIf="!sortedMaintenances.length">
+            <td colspan="5" class="mhr__empty">No hay mantenimientos registrados para esta unidad.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mhr__section" *ngIf="detailCards().length">
+    <div class="mhr__section-title">
+      <span class="material-symbols-outlined mhr__text-primary">analytics</span>
+      <h3 class="mhr__h3 mhr__text-tertiary">Detalle reciente</h3>
+    </div>
+    <div class="mhr__cards">
+      <div
+        *ngFor="let c of detailCards(); let i = index"
+        class="mhr__card"
+        [class.mhr__card--a]="i % 3 === 0"
+        [class.mhr__card--b]="i % 3 === 1"
+        [class.mhr__card--c]="i % 3 === 2"
+      >
+        <p class="mhr__label mhr__text-muted mhr__upper">{{ c.title }}</p>
+        <p class="mhr__card-date">{{ c.dateShort }}</p>
+        <p class="mhr__card-km">{{ c.kmLabel }}</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mhr__footer">
+    <div class="mhr__footer-left">
+      <div class="mhr__total-box">
+        <p class="mhr__label mhr__upper mhr__text-on-tint">Inversión total registrada</p>
+        <p class="mhr__total-num">${{ totalCostFormatted() }}</p>
+        <p class="mhr__tiny mhr__text-on-tint-dim">Suma de costes de los registros mostrados</p>
+      </div>
+    </div>
+    <div class="mhr__footer-right">
+      <div class="mhr__next-wrap">
+        <div class="mhr__next-inner">
+          <div class="mhr__next-head">
+            <span class="material-symbols-outlined mhr__text-primary mhr__ico-fill">assignment_late</span>
+            <p class="mhr__label mhr__text-primary mhr__upper-bold">Próximos hitos (recordatorios / km)</p>
+          </div>
+          <div class="mhr__next-list" *ngIf="nextServices.length">
+            <div *ngFor="let n of nextServices" class="mhr__next-row">
+              <span class="mhr__next-label">{{ n.label }}</span>
+              <span class="mhr__next-km" *ngIf="n.km != null">{{ fmtKm(n.km) }}</span>
+              <span class="mhr__next-km" *ngIf="n.km == null">—</span>
+            </div>
+          </div>
+          <p class="mhr__tiny mhr__text-muted" *ngIf="!nextServices.length">
+            Sin recordatorios con umbral de km para esta unidad.
+          </p>
+        </div>
+        <span class="mhr__water material-symbols-outlined">calendar_today</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="mhr__legal">
+    <div class="mhr__legal-text">
+      <p>PLATAFORMA DE MANTENIMIENTO · DOCUMENTO GENERADO ELECTRÓNICAMENTE</p>
+      <p>Los datos reflejan el estado del sistema en la fecha de generación.</p>
+    </div>
+    <div class="mhr__signatures">
+      <div class="mhr__sign">
+        <div class="mhr__sign-line"></div>
+        <p class="mhr__label mhr__text-muted">RESPONSABLE FLOTA</p>
+      </div>
+      <div class="mhr__sign">
+        <div class="mhr__sign-line"></div>
+        <p class="mhr__label mhr__text-muted">JEFE TÉCNICO</p>
+      </div>
+    </div>
+  </div>
+</article>

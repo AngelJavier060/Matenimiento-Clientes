@@ -21,6 +21,10 @@ export class MaintenanceService {
     );
   }
 
+  getMaintenanceById(id: number): Observable<MaintenanceResponse> {
+    return this.http.get<MaintenanceResponse>(`${this.apiUrl}/maintenance/${id}`);
+  }
+
   createMaintenance(data: MaintenanceRequest): Observable<MaintenanceResponse> {
     return this.http.post<MaintenanceResponse>(`${this.apiUrl}/maintenance`, data);
   }

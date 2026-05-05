@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/colors.dart';
 import '../models/maintenance/maintenance_response.dart';
+import '../utils/maintenance_category_filter.dart';
 
 class MaintenanceCard extends StatelessWidget {
   final MaintenanceResponse maintenance;
@@ -59,6 +60,28 @@ class MaintenanceCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (maintenanceCategoryLabel(maintenance.serviceCategory)
+                      .trim()
+                      .isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        maintenanceCategoryLabel(
+                            maintenance.serviceCategory),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.info,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

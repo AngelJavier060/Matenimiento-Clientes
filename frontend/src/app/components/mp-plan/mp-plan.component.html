@@ -10,15 +10,75 @@
       <h2 class="mp-title">Mantenimientos &mdash; Preventivo</h2>
     </div>
     <div class="mp-header-actions">
-      <button class="mp-btn mp-btn-secondary" (click)="mostrarModal = true">
-        <span class="material-symbols-outlined">add</span>
-        Actividad
+      <button
+        type="button"
+        class="mp-btn mp-btn-secondary"
+        *ngIf="showAssociatePlanButton"
+        (click)="asociarPlantillaEstaPlaca()"
+        [disabled]="vinculandoPlanFijo"
+        title="Guarda este plan como fijo para la placa elegida arriba (en base de datos)"
+      >
+        <span class="material-symbols-outlined">link</span>
+        {{ vinculandoPlanFijo ? 'Vinculando…' : 'Vincular plan a esta placa' }}
       </button>
-      <button class="mp-btn mp-btn-primary">
-        <span class="material-symbols-outlined">check_circle</span>
-        Registrar Servicio
+      <button
+        class="mp-btn mp-btn-secondary"
+        type="button"
+        (click)="abrirModalNuevaActividad()"
+        [disabled]="!permiteAgregarActividad"
+        [title]="
+          !permiteAgregarActividad
+            ? (vehicleId && fleetMatchMode && fleetMatchMode !== 'NONE'
+                ? 'Esperando emparejo del plan con esta unidad.'
+                : 'Elegí plantilla MMY o una unidad con plan resuelto')
+            : contextoLibroPorPlacaServidor
+              ? 'Sumar líneas al libro de esta placa (prioridad: pendientes desde plantilla en el cuadro)'
+              : 'Agregar línea en la plantilla general MMY del catálogo'
+        "
+      >
+        <span class="material-symbols-outlined">add</span>
+        {{ textoBotonNuevaActividadHeader }}
+      </button>
+      <button
+        type="button"
+        class="mp-btn mp-btn-ghost mp-btn-sm"
+        *ngIf="contextoLibroPorPlacaServidor"
+        [disabled]="loading || incorporandoNovedades || vehicleId === null"
+        (click)="incorporarNovedadesDesdePlantillaGeneral()"
+        title="Incorporar en bloque todas las líneas nuevas desde la plantilla MMY aplicada"
+      >
+        <span class="material-symbols-outlined" [class.mp-spin]="incorporandoNovedades">sync_alt</span>
+        Incorporar todo
+      </button>
+      <button
+        class="mp-btn mp-btn-primary"
+        type="button"
+        (click)="registrarServicioPreventivo()"
+        [disabled]="!vehicleId"
+        title="Abre el formulario para crear un mantenimiento en la base: queda enlazado a esta placa y puede listarse abajo como historial."
+      >
+        <span class="material-symbols-outlined">playlist_add_check</span>
+        Registrar visita ejecutada
       </button>
     </div>
+  </div>
+
+  <div class="mp-compact-bar"
+    *ngIf="vehicleId && (fleetMatchMode || fleetMatchHint || fleetVehicleBrand || fleetVehicleModel || fleetVehicleYear != null)">
+    <span class="mp-compact-badge" *ngIf="fleetMatchMode">{{ fleetMatchMode }}</span>
+    <span class="mp-compact-bar__hint" *ngIf="fleetMatchHint">{{ fleetMatchHint }}</span>
+    <span class="mp-compact-bar__mmy" *ngIf="fleetVehicleBrand || fleetVehicleModel || fleetVehicleYear != null">
+      MMY:&nbsp;<strong>{{ fleetVehicleBrand }}</strong>&nbsp;{{ fleetVehicleModel }}<span *ngIf="fleetVehicleYear != null">&nbsp;· año {{ fleetVehicleYear }}</span>
+    </span>
+  </div>
+  <div
+    class="mp-toast-mini"
+    *ngIf="contextoLibroPorPlacaServidor && incorporarFeedback as fb"
+    [ngClass]="'mp-toast-mini--' + fb.tipo"
+    role="status"
+  >
+    <span>{{ fb.texto }}</span>
+    <button type="button" class="mp-toast-mini__close" (click)="cerrarIncorporarMensaje()">✕</button>
   </div>
 
   <div class="mp-grid">
@@ -28,30 +88,69 @@
       <div class="mp-card mp-card-vehicle">
         <div class="mp-card-accent"></div>
         <div class="mp-card-head">
-          <h3 class="mp-card-title">Informaci&oacute;n del Veh&iacute;culo</h3>
-          <span class="mp-badge-status">En Servicio</span>
+          <div>
+            <h3 class="mp-card-title">Plantillas generales por MMY</h3>
+          </div>
+          <span class="mp-badge-status mp-badge-status--catalog" *ngIf="!contextoLibroPorPlacaServidor"
+            >Est&aacute;ndar cat&aacute;logo</span
+          >
+          <span class="mp-badge-status mp-badge-status--unit" *ngIf="contextoLibroPorPlacaServidor"
+            >Libro de esta placa (exclusiva)</span
+          >
         </div>
         <div class="mp-card-body">
-          <!-- Selector superior: dropdown de marcas/modelos registrados -->
-          <div class="mp-brand-selector">
-            <div class="mp-brand-selector-header">
-              <span class="material-symbols-outlined mp-brand-icon">directions_car</span>
-              <select class="mp-brand-select" (change)="seleccionarPlanDesdeSelect(+$any($event.target).value)">
-                <option value="" disabled selected>Seleccionar veh&iacute;culo...</option>
-                <option *ngFor="let item of planList" [value]="item.id" [selected]="item.id === planActivo.id">
-                  {{ item.marca }} {{ item.modelo }} &middot; {{ item.anio }}
-                </option>
-              </select>
-              <span class="material-symbols-outlined mp-chevron-icon">expand_more</span>
+          <div class="mp-plan-list">
+            <label class="mp-label">Planes generales registrados</label>
+            <div *ngIf="planList.length === 0" class="mp-plan-empty">
+              No hay planes registrados. Ingrese Marca, Modelo y A&ntilde;o y presione Guardar.
             </div>
-            <div class="mp-brand-summary" *ngIf="planActivo && planActivo.id !== 0">
-              <div class="mp-brand-badge">{{ planActivo.marca }}</div>
-              <div class="mp-brand-detail">{{ planActivo.modelo }} &middot; {{ planActivo.anio }}</div>
+            <div
+              *ngFor="let item of planList"
+              class="mp-plan-item"
+              (click)="clickFilaListaCatalogo(item)"
+              [class.mp-plan-item--blocked]="vehicleId != null && !puedeOperarListaPlanMmY(item)"
+              [class.mp-plan-item--active]="item.id === planActivo.id || (editandoPlan && editandoPlanId === item.id)"
+            >
+              <div class="mp-plan-item-info">
+                <span class="mp-plan-item-brand">{{ item.marca }}</span>
+                <span class="mp-plan-item-detail">{{ item.modelo }} &middot; {{ item.anio }}</span>
+              </div>
+              <div class="mp-plan-item-actions">
+                <button
+                  class="mp-plan-btn"
+                  title="Editar MMY catálogo"
+                  [disabled]="vehicleId != null && !puedeOperarListaPlanMmY(item)"
+                  (click)="$event.stopPropagation(); puedeOperarListaPlanMmY(item) && editarPlan(item)"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  class="mp-plan-btn mp-plan-btn--danger"
+                  title="Eliminar"
+                  [disabled]="vehicleId != null && !puedeOperarListaPlanMmY(item)"
+                  (click)="$event.stopPropagation(); puedeOperarListaPlanMmY(item) && eliminarPlan(item.id)"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Formulario para crear/editar plan (marca/modelo/año) -->
-          <div class="mp-plan-form">
+          <!-- Formulario crear/editar plantilla MMY (siempre visible) -->
+          <div class="mp-plan-form mp-plan-form--first">
+            <p class="mp-form-mm-hint mp-form-mm-hint--short" *ngIf="vehicleId">
+              <strong>Guardar</strong> aquí edita la <strong>plantilla MMY general</strong> para todo el taller con ese mismo referente.
+            </p>
+            <button
+              type="button"
+              class="mp-btn mp-btn-ghost mp-btn-sm mp-form-mm-sync"
+              *ngIf="vehicleId"
+              (click)="rellenarFormMmYdesdeLaUnidad(true)"
+              title="Copiar marca / modelo / año registrados del vehículo"
+            >
+              <span class="material-symbols-outlined">published_with_changes</span>
+              Usar datos MMY del vehículo
+            </button>
             <div class="mp-info-grid">
               <div>
                 <label class="mp-label">Marca</label>
@@ -75,107 +174,82 @@
             </button>
           </div>
 
-          <!-- Listado de planes guardados -->
-          <div class="mp-plan-list">
-            <label class="mp-label">Planes registrados</label>
-            <div *ngIf="planList.length === 0" class="mp-plan-empty">
-              No hay planes registrados. Ingrese Marca, Modelo y A&ntilde;o y presione Guardar.
+          <!-- Intervalos orientativos del MMY (sin odómetro de placas ni semáforo) -->
+          <div class="mp-mm-reference">
+            <label class="mp-label">Escalas de intervalo (referencia MMY)</label>
+            <p class="mp-mm-reference__hint">Solo referencia del catálogo seleccionado; sin odómetro de placa.</p>
+            <div *ngIf="intervalosReferenciaCatalogo.length === 0" class="mp-mm-reference__empty">
+              Agregá actividades para ver lapsos ejemplo (ej. 5&nbsp;000 / 20&nbsp;000&nbsp;km).
             </div>
-            <div *ngFor="let item of planList" class="mp-plan-item" (click)="seleccionarPlan(item)" [class.mp-plan-item--active]="item.id === planActivo.id">
-              <div class="mp-plan-item-info">
-                <span class="mp-plan-item-brand">{{ item.marca }}</span>
-                <span class="mp-plan-item-detail">{{ item.modelo }} &middot; {{ item.anio }}</span>
-              </div>
-              <div class="mp-plan-item-actions">
-                <button class="mp-plan-btn" title="Editar" (click)="$event.stopPropagation(); editarPlan(item)">
-                  <span class="material-symbols-outlined">edit</span>
-                </button>
-                <button class="mp-plan-btn mp-plan-btn--danger" title="Eliminar" (click)="$event.stopPropagation(); eliminarPlan(item.id)">
-                  <span class="material-symbols-outlined">delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Kilometraje + barra de progreso -->
-          <div class="mp-km-section">
-            <div class="mp-km-row">
-              <div>
-                <label class="mp-label">Kilometraje Actual</label>
-                <div class="mp-km-value">
-                  {{ vehiculoActivo.kmActuales | number }}
-                  <span class="mp-km-unit">km</span>
-                </div>
-              </div>
-              <div class="mp-km-right">
-                <label class="mp-label">Ciclo de Servicio</label>
-                <div class="mp-km-cycle">{{ porcentajeCicloBase }}% <span class="mp-km-unit">del ciclo</span></div>
-              </div>
-            </div>
-            <!-- Progress bar -->
-            <div class="mp-progress-bar">
-              <div class="mp-progress-fill" [style.width.%]="porcentajeCicloBase" [style.background]="colorBarra"></div>
-              <div class="mp-progress-remain" [style.width.%]="100 - porcentajeCicloBase"></div>
-            </div>
-            <div class="mp-progress-labels">
-              <span>{{ intervalosOrdenados[0] | number }} km</span>
-              <span>{{ intervalosOrdenados[1] || intervalosOrdenados[0] * 2 | number }} km</span>
+            <div *ngIf="intervalosReferenciaCatalogo.length" class="mp-mm-reference-strip">
+              <span *ngFor="let iv of intervalosReferenciaCatalogo" class="mp-mm-reference-chip">{{ iv | number }} km</span>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Stats mini cards -->
-      <div class="mp-stats-grid">
-        <div class="mp-stat mp-stat-dark">
-          <span class="material-symbols-outlined mp-stat-icon">speed</span>
-          <div>
-            <div class="mp-stat-value">{{ kmPromedioDiario }} <span class="mp-stat-unit">km/d&iacute;a</span></div>
-            <div class="mp-stat-label">Promedio de Uso</div>
-          </div>
-        </div>
-        <div class="mp-stat mp-stat-light">
-          <span class="material-symbols-outlined mp-stat-icon-blue">event</span>
-          <div>
-            <div class="mp-stat-value mp-stat-value-sm">{{ proximaInspeccion }}</div>
-            <div class="mp-stat-label mp-stat-label-blue">Pr&oacute;xima Inspecci&oacute;n</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Alertas -->
-      <div *ngIf="totalVencidos > 0" class="mp-alert mp-alert-danger">
-        <span class="mp-alert-icon mp-alert-icon-danger material-symbols-outlined">error</span>
-        <span><strong>{{ totalVencidos }} actividad(es) vencida(s)</strong> &mdash; revisar de inmediato</span>
-      </div>
-      <div *ngIf="totalProximos > 0" class="mp-alert mp-alert-warning">
-        <span class="mp-alert-icon mp-alert-icon-warning material-symbols-outlined">warning</span>
-        <span><strong>{{ totalProximos }} actividad(es) pr&oacute;xima(s)</strong> &mdash; informar al cliente</span>
       </div>
     </section>
 
     <!-- ======= COLUMNA DERECHA: Intervalos ======= -->
-    <section class="mp-right">
+    <section class="mp-right" id="preventivo-actividades-libro" tabindex="-1">
+      <div *ngIf="mostrarAlertasKmPorUnidadSeleccionada && totalVencidos > 0" class="mp-alert mp-alert-danger">
+        <span class="mp-alert-icon mp-alert-icon-danger material-symbols-outlined">error</span>
+        <span><strong>{{ totalVencidos }} actividad(es) vencida(s)</strong> &mdash; revisar de inmediato</span>
+      </div>
+      <div *ngIf="mostrarAlertasKmPorUnidadSeleccionada && totalProximos > 0" class="mp-alert mp-alert-warning">
+        <span class="mp-alert-icon mp-alert-icon-warning material-symbols-outlined">warning</span>
+        <span><strong>{{ totalProximos }} actividad(es) pr&oacute;xima(s)</strong> &mdash; informar al cliente</span>
+      </div>
       <div *ngFor="let km of intervalosOrdenados" class="mp-interval-card">
         <!-- Header -->
         <div class="mp-interval-header" (click)="toggleGrupo(km)">
           <div class="mp-interval-head-left">
-            <div class="mp-interval-icon" [ngClass]="{'mp-interval-icon-active': estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' || estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'}">
-              <span class="material-symbols-outlined">
-                {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'error' : 
-                   estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'warning' : 'check_circle' }}
-              </span>
-            </div>
-            <h3 class="mp-interval-title">Cada {{ km | number }} km &mdash; {{ alertasAgrupadas.get(km)?.[0]?.actividad?.intervaloMeses }} meses</h3>
+            <ng-container *ngIf="!mostrarAlertasKmPorUnidadSeleccionada">
+              <div class="mp-interval-icon mp-interval-icon--neutral">
+                <span class="material-symbols-outlined">precision_manufacturing</span>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="mostrarAlertasKmPorUnidadSeleccionada">
+              <div
+                class="mp-interval-icon"
+                [ngClass]="{
+                  'mp-interval-icon-active':
+                    estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ||
+                    estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'
+                }"
+              >
+                <span class="material-symbols-outlined">{{
+                  estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido'
+                    ? 'error'
+                    : estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'
+                      ? 'warning'
+                      : 'check_circle'
+                }}</span>
+              </div>
+            </ng-container>
+            <h3 class="mp-interval-title">
+              Cada {{ km | number }} km &mdash; {{ alertasAgrupadas.get(km)?.[0]?.actividad?.intervaloMeses }} meses
+            </h3>
           </div>
           <div class="mp-interval-head-right">
-            <span class="mp-badge-interval" [ngClass]="'mp-badge-interval--' + estadoDelGrupo(alertasAgrupadas.get(km)!)">
-              <span class="material-symbols-outlined mp-badge-icon">
-                {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'error' : 
-                   estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'warning' : 'check_circle' }}
-              </span>
-              {{ estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido' ? 'Vencido' : 
-                 estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo' ? 'Pr&oacute;ximo' : 'Al d&iacute;a' }}
+            <span
+              class="mp-badge-interval"
+              *ngIf="mostrarAlertasKmPorUnidadSeleccionada"
+              [ngClass]="'mp-badge-interval--' + estadoDelGrupo(alertasAgrupadas.get(km)!)"
+            >
+              <span class="material-symbols-outlined mp-badge-icon">{{
+                estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido'
+                  ? 'error'
+                  : estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'
+                    ? 'warning'
+                    : 'check_circle'
+              }}</span>
+              {{
+                estadoDelGrupo(alertasAgrupadas.get(km)!) === 'vencido'
+                  ? 'Vencido'
+                  : estadoDelGrupo(alertasAgrupadas.get(km)!) === 'proximo'
+                    ? 'Pr&oacute;ximo'
+                    : 'Al d&iacute;a'
+              }}
             </span>
             <span class="mp-chevron" [class.mp-chevron--open]="estaAbierto(km)">
               <span class="material-symbols-outlined">expand_more</span>
@@ -189,35 +263,73 @@
             <thead>
               <tr>
                 <th>Actividad de Mantenimiento</th>
-                <th>Prioridad</th>
-                <th>Estado</th>
+                <th *ngIf="mostrarAlertasKmPorUnidadSeleccionada">Prioridad</th>
+                <th *ngIf="mostrarAlertasKmPorUnidadSeleccionada">Estado</th>
                 <th class="mp-th-actions">Acci&oacute;n</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let alerta of alertasAgrupadas.get(km)" class="mp-tr" [ngClass]="{'mp-tr--vencido': alerta.estado === 'vencido', 'mp-tr--proximo': alerta.estado === 'proximo'}">
+              <tr
+                *ngFor="let alerta of alertasAgrupadas.get(km)"
+                class="mp-tr"
+                [ngClass]="
+                  !mostrarAlertasKmPorUnidadSeleccionada
+                    ? {}
+                    : {
+                        'mp-tr--vencido': alerta.estado === 'vencido',
+                        'mp-tr--proximo': alerta.estado === 'proximo'
+                      }
+                "
+              >
                 <td>
                   <div class="mp-activity-name">
-                    <span class="mp-tipo-badge" [ngClass]="'mp-tipo-badge--' + alerta.actividad.tipo.toLowerCase()">{{ alerta.actividad.tipo }}</span>
+                    <span class="mp-tipo-badge" [ngClass]="'mp-tipo-badge--' + alerta.actividad.tipo.toLowerCase()">{{
+                      alerta.actividad.tipo
+                    }}</span>
                     {{ alerta.actividad.nombre }}
                   </div>
                 </td>
-                <td>
+                <td *ngIf="mostrarAlertasKmPorUnidadSeleccionada">
                   <span class="mp-priority">
-                    {{ alerta.estado === 'vencido' ? 'Alta' : alerta.estado === 'proximo' ? 'Media' : 'Baja' }}
+                    {{
+                      alerta.estado === 'vencido' ? 'Alta' : alerta.estado === 'proximo' ? 'Media' : 'Baja'
+                    }}
                   </span>
                 </td>
-                <td>
+                <td *ngIf="mostrarAlertasKmPorUnidadSeleccionada">
                   <div class="mp-status-cell">
-                    <span class="mp-dot" [ngClass]="{'mp-dot--red': alerta.estado === 'vencido', 'mp-dot--amber': alerta.estado === 'proximo', 'mp-dot--green': alerta.estado === 'ok'}"></span>
-                    <span>{{ alerta.estado === 'vencido' ? 'Vencido' : alerta.estado === 'proximo' ? 'Pr&oacute;ximo' : 'Al d&iacute;a' }}</span>
+                    <span
+                      class="mp-dot"
+                      [ngClass]="{
+                        'mp-dot--red': alerta.estado === 'vencido',
+                        'mp-dot--amber': alerta.estado === 'proximo',
+                        'mp-dot--green': alerta.estado === 'ok'
+                      }"
+                    ></span>
+                    <span>{{
+                      alerta.estado === 'vencido'
+                        ? 'Vencido'
+                        : alerta.estado === 'proximo'
+                          ? 'Pr&oacute;ximo'
+                          : 'Al d&iacute;a'
+                    }}</span>
                     <span class="mp-km-remaining">Faltan {{ alerta.kmParaSiguiente | number }} km</span>
                   </div>
                 </td>
                 <td class="mp-td-actions">
-                  <button class="mp-action-btn" title="Editar">
-                    <span class="material-symbols-outlined">more_vert</span>
-                  </button>
+                  <div class="mp-act-btns" *ngIf="puedeGestionarActividadBd(alerta.actividad)">
+                    <button type="button" class="mp-act-icon-btn" title="Editar actividad" (click)="abrirModalEditarActividad(alerta, $event)">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button type="button" class="mp-act-icon-btn mp-act-icon-btn--danger" title="Quitar esta línea del plan" (click)="eliminarActividadDePlan(alerta, $event)">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                  <span
+                    *ngIf="!puedeGestionarActividadBd(alerta.actividad)"
+                    class="mp-act-muted"
+                    title="Necesitás una plantilla guardada y líneas cargadas desde el servidor"
+                    >—</span>
                 </td>
               </tr>
             </tbody>
@@ -236,15 +348,49 @@
 </div>
 
 <!-- ===================== MODAL NUEVA ACTIVIDAD ===================== -->
-<div class="mp-modal-bg" *ngIf="mostrarModal" (click)="mostrarModal = false">
+<div class="mp-modal-bg" *ngIf="mostrarModal" (click)="cerrarModalActividad()">
   <div class="mp-modal" (click)="$event.stopPropagation()">
     <div class="mp-modal-header">
-      <h3 class="mp-modal-title">Nueva actividad</h3>
-      <button class="mp-modal-close" (click)="mostrarModal = false">
+      <h3 class="mp-modal-title">{{ modalTituloActividad }}</h3>
+      <button type="button" class="mp-modal-close" (click)="cerrarModalActividad()">
         <span class="material-symbols-outlined">close</span>
       </button>
     </div>
     <div class="mp-modal-body">
+      <!-- Pendientes desde plantilla MMY para esta sola unidad -->
+      <div class="mp-add-catalog" *ngIf="editandoActividadId === null && contextoLibroPorPlacaServidor">
+        <p class="mp-label mp-add-catalog__ttl">Catálogo MMY pendiente en esta placa</p>
+        <div *ngIf="cargandoCatalogoMmYParaLibro" class="mp-muted mp-add-catalog__muted">Cargando…</div>
+        <ul
+          *ngIf="!cargandoCatalogoMmYParaLibro && actividadesPendientesPlantillaParaLibro.length > 0"
+          class="mp-add-catalog-list"
+        >
+          <li *ngFor="let tpl of actividadesPendientesPlantillaParaLibro" class="mp-add-catalog-row">
+            <div class="mp-add-catalog-row__main">
+              <span class="mp-add-catalog-name">{{ tpl.nombre }}</span>
+              <span class="mp-add-catalog-meta">{{ tpl.intervaloKm | number }} km / {{ tpl.intervaloMeses }} mes</span>
+            </div>
+            <button
+              type="button"
+              class="mp-btn mp-btn-primary mp-btn-xs"
+              (click)="agregarLineaCatalogoMmYAlLibro(tpl)"
+              [disabled]="!crudLineasUsaApiLibroPorPlaca"
+              title="Añadir solo al libro de esta placa"
+            >
+              Agregar
+            </button>
+          </li>
+        </ul>
+        <p
+          *ngIf="!cargandoCatalogoMmYParaLibro && actividadesPendientesPlantillaParaLibro.length === 0"
+          class="mp-muted mp-add-catalog__empty"
+        >
+          Ninguna línea nueva del catálogo por sumar aquí (o ya están todas en esta unidad).
+        </p>
+        <hr class="mp-modal-divider" />
+        <p class="mp-label">Línea manual (solo esta placa)</p>
+      </div>
+
       <div class="mp-field">
         <label class="mp-label">Nombre de la actividad <span class="mp-req">*</span></label>
         <input type="text" class="mp-input" placeholder="Ej: Cambio de aceite y filtro" [(ngModel)]="formActividadNombre" />
@@ -269,13 +415,18 @@
           </select>
         </div>
       </div>
-      <div class="mp-modal-hint">
-        Esta actividad se asocia al plan <strong>{{ planActivo.marca }} {{ planActivo.modelo }} ({{ planActivo.anio }})</strong>.
+      <div class="mp-modal-hint" *ngIf="contextoLibroPorPlacaServidor">
+        Se guarda <strong>sólo para la placa activa</strong> ({{ vehiculoActivo.placa }}). La plantilla MMY sigue igual en el catálogo.
+      </div>
+      <div class="mp-modal-hint" *ngIf="!contextoLibroPorPlacaServidor">
+        Esta línea forma parte del plan MMY guardado como plantilla (<strong>{{ planActivo.marca }} {{ planActivo.modelo }}</strong>). Aplica a todas las unidades sin copia específica.
       </div>
     </div>
     <div class="mp-modal-footer">
-      <button class="mp-btn mp-btn-ghost" (click)="mostrarModal = false">Cancelar</button>
-      <button class="mp-btn mp-btn-primary" (click)="guardarActividad()">Guardar actividad</button>
+      <button type="button" class="mp-btn mp-btn-ghost" (click)="cerrarModalActividad()">Cancelar</button>
+      <button type="button" class="mp-btn mp-btn-primary" (click)="guardarActividad()">
+        {{ editandoActividadId != null ? 'Actualizar actividad' : 'Guardar actividad' }}
+      </button>
     </div>
   </div>
 </div>
